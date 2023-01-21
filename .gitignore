@@ -5,6 +5,9 @@ idea
 .vscode
 vscode
 /vscode
+env_test/
+.env_test
+/env_test
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

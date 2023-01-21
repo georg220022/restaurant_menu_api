@@ -1,0 +1,44 @@
+version: '3.3'
+
+services: 
+ 
+  postgres_db_test:
+    container_name: postgres_db_test
+    image: postgres:15.1-alpine
+    restart:
+      on-failure
+    env_file:
+      app/tests_package/.env
+    networks:
+      - test_network
+    expose:
+      - 5432
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
+  web_test:
+    container_name: web_test
+    build:
+      context: app/
+      dockerfile: tests_package/Dockerfile
+    networks:
+      - test_network
+    command:
+      bash -c "alembic upgrade head && pytest -v run_test.py"
+    restart:
+      "no"
+    depends_on:
+      postgres_db_test:
+        condition: service_healthy
+
+    ports:
+      - 8000:8000
+  
+networks:
+  test_network:
+    name: test_network
