@@ -8,8 +8,9 @@ from alembic import context
 
 sys.path = ["", ".."] + sys.path[1:]
 
-from api.settings import POSTGRE_URL
-from app.base import Base
+
+from settings.settings import POSTGRE_URL
+from settings.base import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

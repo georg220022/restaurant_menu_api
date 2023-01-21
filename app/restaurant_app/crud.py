@@ -1,5 +1,5 @@
 from .models import RestaurantDish, RestaurantMenu, RestaurantSubMenu
-from .settings import session as db, engine
+from settings.settings import session as db, engine
 from fastapi.responses import JSONResponse
 from typing import Optional
 
