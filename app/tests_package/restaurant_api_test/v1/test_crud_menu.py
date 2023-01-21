@@ -3,8 +3,6 @@ from fastapi.testclient import TestClient
 
 client = TestClient(apps)
 URL = "/api/v1/menus"
-# Присвоим переменную при тесте создания меню через global
-MENU_ID = None
 
 DATA = {"title": "Test title menu", "description": "Test description menu"}
 UPDATED_DATA = {
@@ -14,13 +12,13 @@ UPDATED_DATA = {
 
 
 class TestGroupMenu:
-    @staticmethod
-    def test_post_menu():
+    def setup_class(self):
+        self.response_menu = client.post(URL, json=DATA)
+        self.menu_id = self.response_menu.json()["id"]
+
+    def test_post_menu(self):
         """Тест создания меню"""
-        response = client.post(URL, json=DATA)
-        global MENU_ID
-        # Присвоим сгенерированный id в постгресе при создании меню
-        MENU_ID = response.json()["id"]
+        response = self.response_menu
         # При создании поста ответ должен быть НЕ в list
         assert type(response.json()) == dict
         # Проверка title
@@ -36,10 +34,9 @@ class TestGroupMenu:
         # При создании возвращается статус-код 201
         assert response.status_code == 201
 
-    @staticmethod
-    def test_get_menu():
+    def test_get_menu(self):
         """Тест получения 1 меню"""
-        response = client.get(URL + f"/{MENU_ID}")
+        response = client.get(URL + f"/{self.menu_id}")
         # При запросе 1 меню ответ должен быть НЕ в list
         assert type(response.json()) == dict
         # Проверка title
@@ -80,10 +77,9 @@ class TestGroupMenu:
         # При получении списка меню возвращается статус-код 200
         assert response.status_code == 200
 
-    @staticmethod
-    def test_patch_menu():
+    def test_patch_menu(self):
         """Тест изменения меню"""
-        response = client.patch(URL + f"/{MENU_ID}", json=UPDATED_DATA)
+        response = client.patch(URL + f"/{self.menu_id}", json=UPDATED_DATA)
         # При редактировании 1 меню ответ должен быть НЕ в list
         assert type(response.json()) == dict
         # Проверка title
@@ -99,17 +95,15 @@ class TestGroupMenu:
         # 404 статус код для не существующего
         assert response_404.status_code == 404
 
-    @staticmethod
-    def test_delete_menu():
+    def test_delete_menu(self):
         """Тест удаления меню"""
         response_data = {"status": True, "message": "The menu has been deleted"}
-        response = client.delete(URL + f"/{MENU_ID}")
+        response = client.delete(URL + f"/{self.menu_id}")
         assert response.json() == response_data
         assert response.status_code == 200
 
-    @staticmethod
-    def test_get_deleted_menu():
+    def test_get_deleted_menu(self):
         """Попытка получить удаленное меню"""
-        response = client.get(URL + f"/{MENU_ID}")
+        response = client.get(URL + f"/{self.menu_id}")
         assert response.status_code == 404
         assert response.json() == dict(detail="menu not found")
