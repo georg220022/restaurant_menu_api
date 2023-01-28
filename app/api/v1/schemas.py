@@ -1,9 +1,10 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 
 
 class ErrorSchema(BaseModel):
-    detail: str
+    """Схема ошибки"""
+    detail: Optional[str | list]
 
     class Config:
         schema_extra = {

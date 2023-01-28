@@ -1,5 +1,7 @@
-from api.v1.app import app as apps
 from fastapi.testclient import TestClient
+
+from api.v1.app import app as apps
+
 from .test_crud_menu import DATA as menu_data
 from .test_crud_sub_menu import DATA as sub_menu_data
 
@@ -50,7 +52,6 @@ class TestGroupDish:
 
     def test_get_dish(self):
         """Тест получения 1 блюда"""
-        dish_id = self.dish_id
         response = client.get(url + f"/{self.dish_id}")
         # При запросе 1 блюдо ответ должен быть НЕ в list
         assert type(response.json()) == dict

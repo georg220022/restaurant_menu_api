@@ -1,5 +1,6 @@
-from api.v1.app import app as apps
 from fastapi.testclient import TestClient
+
+from api.v1.app import app as apps
 
 client = TestClient(apps)
 URL = "/api/v1/menus"

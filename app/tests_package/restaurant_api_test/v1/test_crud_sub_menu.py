@@ -1,5 +1,7 @@
-from api.v1.app import app as apps
 from fastapi.testclient import TestClient
+
+from api.v1.app import app as apps
+
 from .test_crud_menu import DATA as menu_data
 
 client = TestClient(apps)
