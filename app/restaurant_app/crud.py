@@ -1,22 +1,25 @@
-from .models import RestaurantDish, RestaurantMenu, RestaurantSubMenu
-from settings.settings import session as db, engine
-from fastapi.responses import JSONResponse
 from typing import Optional
+
+from settings.settings import engine
+from settings.settings import session as db
+
+from .models import RestaurantDish, RestaurantMenu, RestaurantSubMenu
 
 
 class CrudMenu:
     @staticmethod
     def get_menu_db(menu_id: Optional[int] = None):
         query_str = """
-            select id, title, description, coalesce(sc, 0) as sub_menu_count, coalesce(dc, 0) as dishes_count
+            select id, title, description, coalesce(sc, 0) as sub_menu_count, coalesce(dc, 0)
+                as dishes_count
             from "RestaurantMenu" rm
             left join (select menu_id, count(*) as sc
                 from "RestaurantSubMenu"
-                group by menu_id 
+                group by menu_id
                 order by menu_id) rsm on rsm.menu_id = rm.id
             left join (select menu_id, count(*) as dc
                 from "RestaurantDish" as rd_join
-                join "RestaurantSubMenu" rsm ON rsm.id  = rd_join.sub_menu_id 
+                join "RestaurantSubMenu" rsm ON rsm.id  = rd_join.sub_menu_id
                 group by menu_id) rd on rd.menu_id = rm.id
             """
         if menu_id:
@@ -38,8 +41,8 @@ class CrudMenu:
                 return data[0]
             return data
         if not menu_id:
-            return JSONResponse(content=[], status_code=200)
-        return JSONResponse(content={"detail": "menu not found"}, status_code=404)
+            return []
+        return "NotFound"
 
     @staticmethod
     def create_menu_db(data):
@@ -94,13 +97,14 @@ class CrudSubMenu:
                     dishes_count=obj[3],
                 )
             )
+        print(data)
         if data:
             if sub_menu_id:
                 return data[0]
             return data
         if not sub_menu_id:
-            return JSONResponse(content=[], status_code=200)
-        return JSONResponse(content={"detail": "submenu not found"}, status_code=404)
+            return []
+        return "NotFound"
 
     @staticmethod
     def create_sub_menu_db(menu_id, data):
@@ -163,8 +167,8 @@ class CrudDish:
         if data:
             return data
         if not dish_id:
-            return JSONResponse(content=[], status_code=200)
-        return JSONResponse(content={"detail": "dish not found"}, status_code=404)
+            return []
+        return "NotFound"
 
     @staticmethod
     def create_dish_db(menu_id, sub_menu_id, data):

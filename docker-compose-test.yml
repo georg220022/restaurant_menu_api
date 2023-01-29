@@ -1,6 +1,17 @@
 version: '3.3'
 
-services: 
+services:
+
+  redis_db:
+    container_name: redis_db
+    image: redis:latest
+    restart: always
+    networks:
+      - test_network
+    env_file:
+      - app/.env
+    expose:
+      - 6379
  
   postgres_db_test:
     container_name: postgres_db_test
@@ -15,6 +26,8 @@ services:
       - 5432
     ports:
       - 5432:5432
+    depends_on:
+      - redis_db
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       interval: 5s
