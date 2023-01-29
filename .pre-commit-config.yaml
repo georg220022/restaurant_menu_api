@@ -8,7 +8,6 @@ repos:
     -   id: check-case-conflict
     -   id: check-merge-conflict
     -   id: double-quote-string-fixer
-    exclude: README.md
 -   repo: https://github.com/gvanderest/pylama-pre-commit
     rev: 0.1.2
     hooks:
