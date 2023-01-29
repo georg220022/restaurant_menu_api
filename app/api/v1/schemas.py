@@ -1,14 +1,28 @@
-from pydantic import BaseModel
 from typing import Optional
+
+from pydantic import BaseModel
+
+
+class NotFoundMenu(BaseModel):
+    detail: str
+
+
+class NotFoundSubMenu(NotFoundMenu):
+    pass
+
+
+class NotFoundDish(NotFoundMenu):
+    pass
 
 
 class ErrorSchema(BaseModel):
     """Схема ошибки"""
+
     detail: Optional[str | list]
 
     class Config:
         schema_extra = {
-            "detail": "Error message",
+            'detail': 'Error message',
         }
 
 

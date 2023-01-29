@@ -2,7 +2,6 @@ from typing import Any, List, Optional
 
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import JSONResponse
-
 from restaurant_app.cache_module import CacheDish, CacheMenu, CacheSubMenu
 from restaurant_app.crud import CrudDish, CrudMenu, CrudSubMenu
 
@@ -10,6 +9,7 @@ from .schemas import (DeleteRestaurantDishSchema,
                       DeleteRestaurantSubMenuSchema, DeleteResturantMenuSchema,
                       ErrorSchema, GetRestaurantDishSchema,
                       GetRestaurantMenuSchema, GetRestaurantSubMenuSchema,
+                      NotFoundDish, NotFoundMenu, NotFoundSubMenu,
                       RequestPatchRestaurantDishSchema,
                       RequestPatchRestaurantSubMenuSchema,
                       RequestPathRestaurantMenuSchema,
@@ -30,7 +30,7 @@ router = APIRouter()
 
 
 @app.get(
-    "/api/v1/menus",
+    '/api/v1/menus',
     response_model=Optional[List[GetRestaurantMenuSchema] | list],
 )
 def get_list_menu():
@@ -42,19 +42,21 @@ def get_list_menu():
 
 
 @app.get(
-    "/api/v1/menus/{menu_id}",
-    response_model=Optional[GetRestaurantMenuSchema | ErrorSchema],
+    '/api/v1/menus/{menu_id}',
+    responses={200: {'model': GetRestaurantMenuSchema}, 404: {'model': NotFoundMenu}},
 )
 def get_menu(menu_id: int):
     """Получить определенное основное меню"""
     if CacheMenu.check_cache(menu_id):
         return CacheMenu.get_menu(menu_id)
     response_data = CrudMenu.get_menu_db(menu_id)
+    if response_data == 'NotFound':
+        return JSONResponse(content={'detail': 'menu not found'}, status_code=404)
     return CacheMenu.set_menu(response_data, menu_id)
 
 
 @app.post(
-    "/api/v1/menus",
+    '/api/v1/menus',
     status_code=201,
     response_model=Optional[ResponsePostRestaurantMenuSchema | ErrorSchema],
 )
@@ -65,16 +67,18 @@ def post_menu(request_data: RequestPostRestaurantMenuSchema):
     return response_data
 
 
-@app.patch("/api/v1/menus/{menu_id}", response_model=ResponsePathRestaurantMenuSchema)
-def patch_menu(menu_id: int, request_data: Optional[RequestPathRestaurantMenuSchema | ErrorSchema]):
+@app.patch('/api/v1/menus/{menu_id}', response_model=ResponsePathRestaurantMenuSchema)
+def patch_menu(
+    menu_id: int, request_data: Optional[RequestPathRestaurantMenuSchema | ErrorSchema]
+):
     """Изменить основное меню"""
     response_data = CacheMenu.clear_cache(menu_id)
-    if response_data == "NotFound":
-        return JSONResponse(content={"detail": "menu not found"}, status_code=404)
+    if response_data == 'NotFound':
+        return JSONResponse(content={'detail': 'menu not found'}, status_code=404)
     return CrudMenu.edit_menu_db(menu_id, request_data)
 
 
-@app.delete("/api/v1/menus/{menu_id}", response_model=DeleteResturantMenuSchema)
+@app.delete('/api/v1/menus/{menu_id}', response_model=DeleteResturantMenuSchema)
 def delete_menu(menu_id: int):
     """Удалить основное меню"""
     CacheMenu.clear_cache(menu_id)
@@ -85,8 +89,8 @@ def delete_menu(menu_id: int):
 
 
 @app.get(
-    "/api/v1/menus/{menu_id}/submenus",
-    response_model=Optional[List[GetRestaurantSubMenuSchema] | Any]
+    '/api/v1/menus/{menu_id}/submenus',
+    response_model=Optional[List[GetRestaurantSubMenuSchema] | Any],
 )
 def get_list_submenu(menu_id: int):
     """Получить список подменю"""
@@ -99,19 +103,22 @@ def get_list_submenu(menu_id: int):
 
 
 @app.get(
-    "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}",
-    response_model=Optional[GetRestaurantSubMenuSchema | Any],
+    '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}',
+    response_model=GetRestaurantSubMenuSchema,
+    responses={404: {'model': NotFoundSubMenu}},
 )
 def get_submenu(menu_id: int, sub_menu_id: int):
     """Получить определенное подменю"""
     if CacheSubMenu.check_cache(menu_id, sub_menu_id):
         return CacheSubMenu.get_sub_menu(menu_id, sub_menu_id)
     response_data = CrudSubMenu.get_sub_menu_db(menu_id, sub_menu_id)
+    if response_data == 'NotFound':
+        return JSONResponse(content={'detail': 'submenu not found'}, status_code=404)
     return CacheSubMenu.set_sub_menu(response_data, menu_id, sub_menu_id)
 
 
 @app.post(
-    "/api/v1/menus/{menu_id}/submenus",
+    '/api/v1/menus/{menu_id}/submenus',
     status_code=201,
     response_model=ResponsePostRestaurantSubMenu,
 )
@@ -123,23 +130,22 @@ def post_sub_menu(menu_id: int, request_data: RequestPostRestaurantSubMenuSchema
 
 
 @app.patch(
-    "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}",
-    response_model=Optional[ResponsePatchRestaurantSubMenuSchema | ErrorSchema]
+    '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}',
+    response_model=Optional[ResponsePatchRestaurantSubMenuSchema | ErrorSchema],
 )
 def patch_sub_menu(
-    menu_id: int, sub_menu_id: int,
-    request_data: RequestPatchRestaurantSubMenuSchema
+    menu_id: int, sub_menu_id: int, request_data: RequestPatchRestaurantSubMenuSchema
 ):
     """Изменить подменю"""
     response_data = CrudSubMenu.edit_sub_menu_db(menu_id, sub_menu_id, request_data)
-    if response_data == "NotFound":
-        return JSONResponse(content={"detail": "submenu not found"}, status_code=404)
+    if response_data == 'NotFound':
+        return JSONResponse(content={'detail': 'submenu not found'}, status_code=404)
     CacheSubMenu.clear_cache(menu_id, sub_menu_id)
     return response_data
 
 
 @app.delete(
-    "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}",
+    '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}',
     response_model=DeleteRestaurantSubMenuSchema,
 )
 def delete_sub_menu(menu_id: int, sub_menu_id: int):
@@ -153,36 +159,40 @@ def delete_sub_menu(menu_id: int, sub_menu_id: int):
 
 
 @app.get(
-    "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes",
+    '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes',
     response_model=List[GetRestaurantDishSchema],
 )
 def get_list_dish(menu_id: int, sub_menu_id: int):
     """Получить список блюд"""
     if CacheDish.check_cache(menu_id, sub_menu_id):
-        print("Из кеша")
         return CacheDish.get_dish(menu_id, sub_menu_id)
     response_data = CrudDish.get_dish_db(menu_id, sub_menu_id)
     return CacheDish.set_dish(response_data, menu_id, sub_menu_id)
 
 
 @app.get(
-    "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes/{dish_id}",
-    response_model=Optional[GetRestaurantDishSchema | Any],
+    '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes/{dish_id}',
+    response_model=GetRestaurantDishSchema,
+    responses={404: {'model': NotFoundDish}},
 )
 def get_dish(menu_id: int, sub_menu_id: int, dish_id: int):
     """Получить определенное блюдо"""
     if CacheDish.check_cache(menu_id, sub_menu_id, dish_id):
         return CacheDish.get_dish(menu_id, sub_menu_id, dish_id)
     response_data = CrudDish.get_dish_db(menu_id, sub_menu_id, dish_id)
+    if response_data == 'NotFound':
+        return JSONResponse(content={'detail': 'dish not found'}, status_code=404)
     return CacheDish.set_dish(response_data, menu_id, sub_menu_id, dish_id)
 
 
 @app.post(
-    "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes",
+    '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes',
     status_code=201,
     response_model=ResponsePostRestaurantDishSchema,
 )
-def post_dish(menu_id: int, sub_menu_id: int, request_data: RequestPostRestaurantDishSchema):
+def post_dish(
+    menu_id: int, sub_menu_id: int, request_data: RequestPostRestaurantDishSchema
+):
     """Создать блюдо"""
     response_data = CrudDish.create_dish_db(menu_id, sub_menu_id, request_data)
     CacheDish.clear_cache(menu_id, sub_menu_id)
@@ -190,22 +200,25 @@ def post_dish(menu_id: int, sub_menu_id: int, request_data: RequestPostRestauran
 
 
 @app.patch(
-    "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes/{dish_id}",
-    response_model=Optional[ResponsePatchRestaurantDishSchema | ErrorSchema]
+    '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes/{dish_id}',
+    response_model=Optional[ResponsePatchRestaurantDishSchema | ErrorSchema],
 )
 def patch_dish(
-    menu_id: int, sub_menu_id: int, dish_id: int, request_data: RequestPatchRestaurantDishSchema
+    menu_id: int,
+    sub_menu_id: int,
+    dish_id: int,
+    request_data: RequestPatchRestaurantDishSchema,
 ):
     """Изменить блюдо"""
     response_data = CrudDish.edit_dish_db(menu_id, sub_menu_id, dish_id, request_data)
-    if response_data == "NotFound":
-        return JSONResponse(content={"detail": "dish not found"}, status_code=404)
+    if response_data == 'NotFound':
+        return JSONResponse(content={'detail': 'dish not found'}, status_code=404)
     CacheDish.clear_cache(menu_id, sub_menu_id, dish_id)
     return response_data
 
 
 @app.delete(
-    "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes/{dish_id}",
+    '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes/{dish_id}',
     response_model=DeleteRestaurantDishSchema,
 )
 def delete_dish(menu_id: int, sub_menu_id: int, dish_id: int):
