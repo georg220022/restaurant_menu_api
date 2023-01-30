@@ -3,6 +3,9 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+"""СХЕМЫ ОШИБОК / 404"""
+
+
 class NotFoundMenu(BaseModel):
     detail: str
 
@@ -24,6 +27,9 @@ class ErrorSchema(BaseModel):
         schema_extra = {
             'detail': 'Error message',
         }
+
+
+"""СХЕМЫ МЕНЮ"""
 
 
 class BaseRestaurantMenuSchema(BaseModel):
@@ -73,6 +79,9 @@ class DeleteResturantMenuSchema(BaseModel):
 
     status: bool
     message: str
+
+
+"""СХЕМЫ ПОДМЕНЮ"""
 
 
 class BaseRestaurantSubMenuSchema(BaseModel):
@@ -125,6 +134,9 @@ class DeleteRestaurantSubMenuSchema(BaseModel):
     message: str
 
 
+"""СХЕМЫ БЛЮД"""
+
+
 class BaseRestaurantDishSchema(BaseModel):
     """Базовая схема Блюд"""
 
@@ -138,8 +150,7 @@ class BaseRestaurantDishSchema(BaseModel):
 
 class RequestPostRestaurantDishSchema(BaseRestaurantDishSchema):
     """Схема POST запроса блюда"""
-
-    pass
+    price: float
 
 
 class ResponsePostRestaurantDishSchema(BaseRestaurantDishSchema):
@@ -151,7 +162,7 @@ class ResponsePostRestaurantDishSchema(BaseRestaurantDishSchema):
 class RequestPatchRestaurantDishSchema(BaseRestaurantDishSchema):
     """Схема PATCH запроса блюда"""
 
-    pass
+    price: float
 
 
 class ResponsePatchRestaurantDishSchema(BaseRestaurantDishSchema):
@@ -159,10 +170,13 @@ class ResponsePatchRestaurantDishSchema(BaseRestaurantDishSchema):
 
     id: str
 
+    class Config:
+        orm_mode = False
+
 
 class GetRestaurantDishSchema(BaseRestaurantDishSchema):
     """Схема ответа к GET запросу блюда"""
-
+    price: str
     id: str
 
 

@@ -1,14 +1,17 @@
+import decimal
 from typing import Optional
-
 from settings.settings import engine
-from settings.settings import session as db
-
-from .models import RestaurantDish, RestaurantMenu, RestaurantSubMenu
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
+from .models import RestaurantDish, RestaurantMenu, RestaurantSubMenu, menus, sub_menus, dish
+from asyncpg import PostgresError
 
 
 class CrudMenu:
     @staticmethod
-    def get_menu_db(menu_id: Optional[int] = None):
+    async def get_menu_db(
+        menu_id: Optional[int] = None
+    ) -> Optional[str | list | dict]:
         query_str = """
             select id, title, description, coalesce(sc, 0) as sub_menu_count, coalesce(dc, 0)
                 as dishes_count
@@ -24,16 +27,14 @@ class CrudMenu:
             """
         if menu_id:
             query_str += f"\nwhere rm.id={menu_id}"
-        query = engine.execute(query_str)
+        async with engine.begin() as conn:
+            query = await conn.execute(text(query_str))
         data = []
-        for obj in query:
+        for obj in query.fetchall():
             data.append(
                 dict(
-                    id=str(obj[0]),
-                    title=obj[1],
-                    description=obj[2],
-                    submenus_count=obj[3],
-                    dishes_count=obj[4],
+                    id=str(obj[0]), title=obj[1], description=obj[2],
+                    submenus_count=obj[3], dishes_count=obj[4],
                 )
             )
         if data:
@@ -45,10 +46,17 @@ class CrudMenu:
         return "NotFound"
 
     @staticmethod
-    def create_menu_db(data):
-        obj = RestaurantMenu(title=data.title, description=data.description)
-        db.add(obj)
-        db.commit()
+    async def create_menu_db(
+        data,
+        asyn_db
+    ) -> dict:
+        obj = RestaurantMenu(**data.dict())
+        try:
+            asyn_db.add(obj)
+            await asyn_db.commit()
+        except PostgresError as exc:
+            asyn_db.rollback()
+            raise exc
         return dict(
             id=str(obj.id),
             title=obj.title,
@@ -58,23 +66,41 @@ class CrudMenu:
         )
 
     @staticmethod
-    def edit_menu_db(menu_id, data):
-        db.query(RestaurantMenu).filter(RestaurantMenu.id == menu_id).update(
-            {"title": data.title, "description": data.description}
-        )
-        db.commit()
-        return CrudMenu.get_menu_db(menu_id)
+    async def edit_menu_db(
+        menu_id,
+        data,
+        asyn_db
+    ):
+        query = (menus.update().where(menus.c.id == menu_id).
+                 values(title=data.title, description=data.description))
+        try:
+            await asyn_db.execute(query)
+            await asyn_db.commit()
+        except PostgresError as exc:
+            asyn_db.rollback()
+            raise exc
+        return await CrudMenu.get_menu_db(menu_id)
 
     @staticmethod
-    def delete_menu_db(menu_id):
-        db.query(RestaurantMenu).filter(RestaurantMenu.id == menu_id).delete()
-        db.commit()
+    async def delete_menu_db(
+        menu_id,
+        asyn_db
+    ):
+        try:
+            await asyn_db.execute(menus.delete().where(menus.c.id == menu_id))
+            await asyn_db.commit()
+        except PostgresError as exc:
+            asyn_db.rollback()
+            raise exc
         return {"status": True, "message": "The menu has been deleted"}
 
 
 class CrudSubMenu:
     @staticmethod
-    def get_sub_menu_db(menu_id, sub_menu_id=None):
+    async def get_sub_menu_db(
+        menu_id,
+        sub_menu_id=None
+    ):
         query_str = f"""
             select id, title, description, coalesce(dc, 0) as dishes_count
             from "RestaurantSubMenu" rsm
@@ -86,18 +112,16 @@ class CrudSubMenu:
         """
         if sub_menu_id:
             query_str += f" AND rsm.id={sub_menu_id}"
-        query = engine.execute(query_str)
+        async with engine.begin() as conn:
+            query = await conn.execute(text(query_str))
         data = []
         for obj in query:
             data.append(
                 dict(
-                    id=str(obj[0]),
-                    title=obj[1],
-                    description=obj[2],
-                    dishes_count=obj[3],
+                    id=str(obj[0]), title=obj[1],
+                    description=obj[2], dishes_count=obj[3],
                 )
             )
-        print(data)
         if data:
             if sub_menu_id:
                 return data[0]
@@ -107,63 +131,86 @@ class CrudSubMenu:
         return "NotFound"
 
     @staticmethod
-    def create_sub_menu_db(menu_id, data):
-        obj = RestaurantSubMenu(
-            title=data.title, description=data.description, menu_id=menu_id
-        )
-        db.add(obj)
-        db.commit()
+    async def create_sub_menu_db(
+        menu_id,
+        data,
+        asyn_db
+    ):
+        obj = RestaurantSubMenu(**data.dict(), menu_id=menu_id)
+        try:
+            asyn_db.add(obj)
+            await asyn_db.commit()
+        except PostgresError as exc:
+            asyn_db.rollback()
+            raise exc
         return dict(
             id=str(obj.id), title=obj.title, description=obj.description, dishes_count=0
         )
 
     @staticmethod
-    def edit_sub_menu_db(menu_id, sub_menu_id, data):
-        db.query(RestaurantSubMenu).filter(
-            RestaurantSubMenu.id == sub_menu_id, RestaurantSubMenu.menu_id == menu_id
-        ).update({"title": data.title, "description": data.description})
-        db.commit()
-        return CrudSubMenu.get_sub_menu_db(menu_id, sub_menu_id)
+    async def edit_sub_menu_db(
+        menu_id,
+        sub_menu_id,
+        data,
+        asyn_db
+    ):
+        query = (sub_menus.update().where(sub_menus.c.id == sub_menu_id).
+                 values(title=data.title, description=data.description))
+        try:
+            await asyn_db.execute(query)
+            await asyn_db.commit()
+        except PostgresError as exc:
+            asyn_db.rollback()
+            raise exc
+        return await CrudSubMenu.get_sub_menu_db(menu_id, sub_menu_id)
 
     @staticmethod
-    def delete_sub_menu_db(menu_id, sub_menu_id):
-        db.query(RestaurantSubMenu).filter(
-            RestaurantSubMenu.id == sub_menu_id, RestaurantSubMenu.menu_id == menu_id
-        ).delete()
-        db.commit()
+    async def delete_sub_menu_db(
+        menu_id,
+        sub_menu_id,
+        asyn_db
+    ):
+        try:
+            await asyn_db.execute(sub_menus.delete().where(sub_menus.c.id == sub_menu_id))
+            await asyn_db.commit()
+        except PostgresError as exc:
+            asyn_db.rollback()
+            raise exc
         return {"status": True, "message": "The submenu has been deleted"}
+
+
+"""Блюда"""
 
 
 class CrudDish:
     @staticmethod
-    def get_dish_db(menu_id, sub_menu_id, dish_id=None):
+    async def get_dish_db(
+        menu_id,
+        sub_menu_id,
+        asyn_db,
+        dish_id=None
+    ):
         data = []
         if not dish_id:
-            query_obj = (
-                db.query(RestaurantDish)
-                .filter(RestaurantDish.sub_menu_id == sub_menu_id)
-                .all()
-            )
-            for obj in query_obj:
+            for obj in await asyn_db.execute(dish.select()):
                 data.append(
                     dict(
                         id=str(obj.id),
                         title=obj.title,
                         description=obj.description,
-                        price=str(obj.price),
+                        price=str(decimal.Decimal(obj.price).normalize()),
                     )
                 )
         else:
-            query_obj = (
-                db.query(RestaurantDish).filter(RestaurantDish.id == dish_id).first()
-            )
+            query_obj = await asyn_db.execute(dish.select().where(dish.c.id == dish_id))
             if query_obj:
-                data = dict(
-                    id=str(query_obj.id),
-                    title=query_obj.title,
-                    description=query_obj.description,
-                    price=str(query_obj.price),
-                )
+                for obj in query_obj:
+                    data = dict(
+                        id=str(obj.id),
+                        title=obj.title,
+                        description=obj.description,
+                        price=str(decimal.Decimal(obj.price).normalize()),
+                    )
         if data:
             return data
         if not dish_id:
@@ -171,15 +218,19 @@ class CrudDish:
         return "NotFound"
 
     @staticmethod
-    def create_dish_db(menu_id, sub_menu_id, data):
-        obj = RestaurantDish(
-            title=data.title,
-            description=data.description,
-            price=data.price,
-            sub_menu_id=sub_menu_id,
-        )
-        db.add(obj)
-        db.commit()
+    async def create_dish_db(
+        menu_id,
+        sub_menu_id,
+        data,
+        asyn_db
+    ):
+        obj = RestaurantDish(**data.dict(), sub_menu_id=sub_menu_id)
+        try:
+            asyn_db.add(obj)
+            await asyn_db.commit()
+        except IntegrityError as e:
+            asyn_db.rollback()
+            raise e
         return dict(
             id=str(obj.id),
             title=obj.title,
@@ -188,15 +239,34 @@ class CrudDish:
         )
 
     @staticmethod
-    def edit_dish_db(menu_id, sub_menu_id, dish_id, data):
-        db.query(RestaurantDish).filter(RestaurantDish.id == dish_id).update(
-            {"title": data.title, "description": data.description, "price": data.price}
-        )
-        db.commit()
-        return CrudDish.get_dish_db(None, None, dish_id)
+    async def edit_dish_db(
+        menu_id,
+        sub_menu_id,
+        dish_id,
+        data,
+        asyn_db
+    ):
+        query = (dish.update().where(dish.c.id == dish_id).
+                 values(title=data.title, description=data.description, price=data.price))
+        try:
+            await asyn_db.execute(query)
+            await asyn_db.commit()
+        except PostgresError as exc:
+            asyn_db.rollback()
+            raise exc
+        return await CrudDish.get_dish_db(None, None, asyn_db, dish_id)
 
     @staticmethod
-    def delete_dish_db(menu_id, sub_menu_id, dish_id):
-        db.query(RestaurantDish).filter(RestaurantDish.id == dish_id).delete()
-        db.commit()
+    async def delete_dish_db(
+        menu_id,
+        sub_menu_id,
+        dish_id,
+        asyn_db
+    ):
+        try:
+            await asyn_db.execute(dish.delete().where(dish.c.id == dish_id))
+            await asyn_db.commit()
+        except PostgresError as exc:
+            asyn_db.rollback()
+            raise exc
         return {"status": True, "message": "The submenu has been deleted"}

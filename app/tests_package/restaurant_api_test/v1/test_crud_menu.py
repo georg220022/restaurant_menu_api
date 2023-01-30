@@ -12,11 +12,11 @@ UPDATED_DATA = {
 
 
 class TestGroupMenu:
-    def setup_class(self):
+    async def setup_class(self):
         self.response_menu = client.post(URL, json=DATA)
         self.menu_id = self.response_menu.json()['id']
 
-    def test_post_menu(self):
+    async def test_post_menu(self):
         """Тест создания меню"""
         response = self.response_menu
         # При создании поста ответ должен быть НЕ в list
@@ -34,7 +34,7 @@ class TestGroupMenu:
         # При создании возвращается статус-код 201
         assert response.status_code == 201
 
-    def test_get_menu(self):
+    async def test_get_menu(self):
         """Тест получения 1 меню"""
         response = client.get(URL + f'/{self.menu_id}')
         # При запросе 1 меню ответ должен быть НЕ в list
@@ -59,7 +59,7 @@ class TestGroupMenu:
         assert response_404.status_code == 404
 
     @staticmethod
-    def test_get_list_menu():
+    async def test_get_list_menu():
         """Тест получения списка меню"""
         response = client.get(URL)
         # При запросе 1 меню ответ должен быть в list
@@ -77,7 +77,7 @@ class TestGroupMenu:
         # При получении списка меню возвращается статус-код 200
         assert response.status_code == 200
 
-    def test_patch_menu(self):
+    async def test_patch_menu(self):
         """Тест изменения меню"""
         response = client.patch(URL + f'/{self.menu_id}', json=UPDATED_DATA)
         # При редактировании 1 меню ответ должен быть НЕ в list
@@ -95,14 +95,14 @@ class TestGroupMenu:
         # 404 статус код для не существующего
         assert response_404.status_code == 404
 
-    def test_delete_menu(self):
+    async def test_delete_menu(self):
         """Тест удаления меню"""
         response_data = {'status': True, 'message': 'The menu has been deleted'}
         response = client.delete(URL + f'/{self.menu_id}')
         assert response.json() == response_data
         assert response.status_code == 200
 
-    def test_get_deleted_menu(self):
+    async def test_get_deleted_menu(self):
         """Попытка получить удаленное меню"""
         response = client.get(URL + f'/{self.menu_id}')
         assert response.status_code == 404
