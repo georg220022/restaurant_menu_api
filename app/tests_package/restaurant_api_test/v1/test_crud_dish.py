@@ -29,11 +29,11 @@ UPDATED_DATA = {
 
 
 class TestGroupDish:
-    def setup_class(self):
+    async def setup_class(self):
         self.response_dish = client.post(url, json=DATA)
         self.dish_id = self.response_dish.json()['id']
 
-    def test_post_dish(self):
+    async def test_post_dish(self):
         """Тест создания блюда"""
         response = self.response_dish
         # При создании блюдо ответ должен быть НЕ в list
@@ -49,7 +49,7 @@ class TestGroupDish:
         # При создании возвращается статус-код 201
         assert response.status_code == 201
 
-    def test_get_dish(self):
+    async def test_get_dish(self):
         """Тест получения 1 блюда"""
         response = client.get(url + f'/{self.dish_id}')
         # При запросе 1 блюдо ответ должен быть НЕ в list
@@ -70,7 +70,7 @@ class TestGroupDish:
         assert response_404.status_code == 404
 
     @staticmethod
-    def test_get_list_dish():
+    async def test_get_list_dish():
         """Тест получения списка блюд"""
         response = client.get(url)
         # При запросе 1 блюдо ответ должен быть в list
@@ -84,7 +84,7 @@ class TestGroupDish:
         # При получении списка блюдо возвращается статус-код 200
         assert response.status_code == 200
 
-    def test_patch_dish(self):
+    async def test_patch_dish(self):
         """Тест изменения блюда"""
         response = client.patch(url + f'/{self.dish_id}', json=UPDATED_DATA)
         # При редактировании 1 блюдо ответ должен быть НЕ в list
@@ -102,14 +102,14 @@ class TestGroupDish:
         # 404 статус код для не существующего
         assert response_404.status_code == 404
 
-    def test_delete_dish(self):
+    async def test_delete_dish(self):
         """Тест удаления блюда"""
         response_data = {'status': True, 'message': 'The submenu has been deleted'}
         response = client.delete(url + f'/{self.dish_id}')
         assert response.json() == response_data
         assert response.status_code == 200
 
-    def test_get_deleted_dish(self):
+    async def test_get_deleted_dish(self):
         """Попытка получить удаленное блюдо"""
         response = client.get(url + f'/{self.dish_id}')
         assert response.status_code == 404

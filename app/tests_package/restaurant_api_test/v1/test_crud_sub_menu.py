@@ -20,11 +20,11 @@ UPDATED_DATA = {
 
 
 class TestGroupSubMenu:
-    def setup_class(self):
+    async def setup_class(self):
         self.response_sub_menu = client.post(URL, json=DATA)
         self.sub_menu_id = self.response_sub_menu.json()['id']
 
-    def test_post_sub_menu(self):
+    async def test_post_sub_menu(self):
         """Тест создания подменю"""
         response = self.response_sub_menu
         # При создании подменю ответ должен быть НЕ в list
@@ -40,7 +40,7 @@ class TestGroupSubMenu:
         # При создании возвращается статус-код 201
         assert response.status_code == 201
 
-    def test_get_sub_menu(self):
+    async def test_get_sub_menu(self):
         """Тест получения 1 подменю"""
         response = client.get(URL + f'/{self.sub_menu_id}')
         # При запросе 1 подменю ответ должен быть НЕ в list
@@ -63,7 +63,7 @@ class TestGroupSubMenu:
         assert response_404.status_code == 404
 
     @staticmethod
-    def test_get_list_sub_menu():
+    async def test_get_list_sub_menu():
         response = client.get(URL)
         # При запросе 1 подменю ответ должен быть в list
         assert type(response.json()) == list
@@ -78,7 +78,7 @@ class TestGroupSubMenu:
         # При получении списка подменю возвращается статус-код 200
         assert response.status_code == 200
 
-    def test_patch_sub_menu(self):
+    async def test_patch_sub_menu(self):
         response = client.patch(URL + f'/{self.sub_menu_id}', json=UPDATED_DATA)
         # При редактировании 1 подменю ответ должен быть НЕ в list
         assert type(response.json()) == dict
@@ -95,14 +95,14 @@ class TestGroupSubMenu:
         # 404 статус код для не существующего
         assert response_404.status_code == 404
 
-    def test_delete_sub_menu(self):
+    async def test_delete_sub_menu(self):
         """Тест удаления подменю"""
         response_data = {'status': True, 'message': 'The submenu has been deleted'}
         response = client.delete(URL + f'/{self.sub_menu_id}')
         assert response.json() == response_data
         assert response.status_code == 200
 
-    def test_get_deleted_sub_menu(self):
+    async def test_get_deleted_sub_menu(self):
         """Попытка получить удаленное подменю"""
         response = client.get(URL + f'/{self.sub_menu_id}')
         assert response.status_code == 404

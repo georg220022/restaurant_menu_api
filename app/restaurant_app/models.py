@@ -45,4 +45,4 @@ class RestaurantDish(Base):
     sub_menu = relationship("RestaurantSubMenu", back_populates="dish")
 
 
-sub_menus = RestaurantDish.__table__
+dish = RestaurantDish.__table__

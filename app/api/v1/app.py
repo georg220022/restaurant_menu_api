@@ -1,5 +1,10 @@
 from typing import Any, List, Optional
 
+from sqlalchemy.orm import Session
+from settings.db import get_db, get_cache
+from fastapi import Depends
+from redis.asyncio import Connection as RedisConn
+
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import JSONResponse
 from restaurant_app.cache_module import CacheDish, CacheMenu, CacheSubMenu
@@ -26,6 +31,7 @@ from .schemas import (DeleteRestaurantDishSchema,
 app = FastAPI()
 router = APIRouter()
 
+
 """ОСНОВНОЕ МЕНЮ"""
 
 
@@ -33,26 +39,31 @@ router = APIRouter()
     '/api/v1/menus',
     response_model=Optional[List[GetRestaurantMenuSchema] | list],
 )
-def get_list_menu():
+async def get_list_menu(
+    asyn_cache: RedisConn = Depends(get_cache)
+):
     """Получить список основного меню"""
-    if CacheMenu.check_cache():
-        return CacheMenu.get_menu()
-    response_data = CrudMenu.get_menu_db()
-    return CacheMenu.set_menu(response_data)
+    if await CacheMenu.check_cache(asyn_cache):
+        return await CacheMenu.get_menu(asyn_cache)
+    response_data = await CrudMenu.get_menu_db()
+    return await CacheMenu.set_menu(asyn_cache, response_data)
 
 
 @app.get(
     '/api/v1/menus/{menu_id}',
     responses={200: {'model': GetRestaurantMenuSchema}, 404: {'model': NotFoundMenu}},
 )
-def get_menu(menu_id: int):
+async def get_menu(
+    menu_id: int,
+    asyn_cache: RedisConn = Depends(get_cache)
+):
     """Получить определенное основное меню"""
-    if CacheMenu.check_cache(menu_id):
-        return CacheMenu.get_menu(menu_id)
-    response_data = CrudMenu.get_menu_db(menu_id)
+    if await CacheMenu.check_cache(asyn_cache, menu_id):
+        return await CacheMenu.get_menu(asyn_cache, menu_id)
+    response_data = await CrudMenu.get_menu_db(menu_id)
     if response_data == 'NotFound':
         return JSONResponse(content={'detail': 'menu not found'}, status_code=404)
-    return CacheMenu.set_menu(response_data, menu_id)
+    return await CacheMenu.set_menu(asyn_cache, response_data, menu_id)
 
 
 @app.post(
@@ -60,29 +71,46 @@ def get_menu(menu_id: int):
     status_code=201,
     response_model=Optional[ResponsePostRestaurantMenuSchema | ErrorSchema],
 )
-def post_menu(request_data: RequestPostRestaurantMenuSchema):
+async def post_menu(
+    request_data: RequestPostRestaurantMenuSchema,
+    asyn_db: Session = Depends(get_db),
+    asyn_cache: RedisConn = Depends(get_cache)
+):
     """Создать основное меню"""
-    response_data = CrudMenu.create_menu_db(request_data)
-    CacheMenu.clear_cache()
+    response_data = await CrudMenu.create_menu_db(request_data, asyn_db)
+    await CacheMenu.clear_cache(asyn_cache)
     return response_data
 
 
-@app.patch('/api/v1/menus/{menu_id}', response_model=ResponsePathRestaurantMenuSchema)
-def patch_menu(
-    menu_id: int, request_data: Optional[RequestPathRestaurantMenuSchema | ErrorSchema]
+@app.patch(
+    '/api/v1/menus/{menu_id}',
+    response_model=ResponsePathRestaurantMenuSchema
+)
+async def patch_menu(
+    menu_id: int,
+    request_data: Optional[RequestPathRestaurantMenuSchema | ErrorSchema],
+    asyn_db: Session = Depends(get_db),
+    asyn_cache: RedisConn = Depends(get_cache)
 ):
     """Изменить основное меню"""
-    response_data = CacheMenu.clear_cache(menu_id)
+    response_data = await CacheMenu.clear_cache(asyn_cache, menu_id)
     if response_data == 'NotFound':
         return JSONResponse(content={'detail': 'menu not found'}, status_code=404)
-    return CrudMenu.edit_menu_db(menu_id, request_data)
+    return await CrudMenu.edit_menu_db(menu_id, request_data, asyn_db)
 
 
-@app.delete('/api/v1/menus/{menu_id}', response_model=DeleteResturantMenuSchema)
-def delete_menu(menu_id: int):
+@app.delete(
+    '/api/v1/menus/{menu_id}',
+    response_model=DeleteResturantMenuSchema
+)
+async def delete_menu(
+    menu_id: int,
+    asyn_db: Session = Depends(get_db),
+    asyn_cache: RedisConn = Depends(get_cache)
+):
     """Удалить основное меню"""
-    CacheMenu.clear_cache(menu_id)
-    return CrudMenu.delete_menu_db(menu_id)
+    await CacheMenu.clear_cache(asyn_cache, menu_id)
+    return await CrudMenu.delete_menu_db(menu_id, asyn_db)
 
 
 """ПОДМЕНЮ"""
@@ -92,14 +120,17 @@ def delete_menu(menu_id: int):
     '/api/v1/menus/{menu_id}/submenus',
     response_model=Optional[List[GetRestaurantSubMenuSchema] | Any],
 )
-def get_list_submenu(menu_id: int):
+async def get_list_submenu(
+    menu_id: int,
+    asyn_cache: RedisConn = Depends(get_cache)
+):
     """Получить список подменю"""
-    if CacheSubMenu.check_cache(menu_id):
-        return CacheSubMenu.get_sub_menu(menu_id)
-    response_data = CrudSubMenu.get_sub_menu_db(menu_id)
+    if await CacheSubMenu.check_cache(asyn_cache, menu_id):
+        return await CacheSubMenu.get_sub_menu(asyn_cache, menu_id)
+    response_data = await CrudSubMenu.get_sub_menu_db(menu_id)
     if response_data == []:
         return response_data
-    return CacheSubMenu.set_sub_menu(response_data, menu_id)
+    return await CacheSubMenu.set_sub_menu(asyn_cache, response_data, menu_id)
 
 
 @app.get(
@@ -107,14 +138,18 @@ def get_list_submenu(menu_id: int):
     response_model=GetRestaurantSubMenuSchema,
     responses={404: {'model': NotFoundSubMenu}},
 )
-def get_submenu(menu_id: int, sub_menu_id: int):
+async def get_submenu(
+    menu_id: int,
+    sub_menu_id: int,
+    asyn_cache: RedisConn = Depends(get_cache)
+):
     """Получить определенное подменю"""
-    if CacheSubMenu.check_cache(menu_id, sub_menu_id):
-        return CacheSubMenu.get_sub_menu(menu_id, sub_menu_id)
-    response_data = CrudSubMenu.get_sub_menu_db(menu_id, sub_menu_id)
+    if await CacheSubMenu.check_cache(asyn_cache, menu_id, sub_menu_id):
+        return await CacheSubMenu.get_sub_menu(asyn_cache, menu_id, sub_menu_id)
+    response_data = await CrudSubMenu.get_sub_menu_db(menu_id, sub_menu_id)
     if response_data == 'NotFound':
         return JSONResponse(content={'detail': 'submenu not found'}, status_code=404)
-    return CacheSubMenu.set_sub_menu(response_data, menu_id, sub_menu_id)
+    return await CacheSubMenu.set_sub_menu(asyn_cache, response_data, menu_id, sub_menu_id)
 
 
 @app.post(
@@ -122,10 +157,15 @@ def get_submenu(menu_id: int, sub_menu_id: int):
     status_code=201,
     response_model=ResponsePostRestaurantSubMenu,
 )
-def post_sub_menu(menu_id: int, request_data: RequestPostRestaurantSubMenuSchema):
+async def post_sub_menu(
+    menu_id: int,
+    request_data: RequestPostRestaurantSubMenuSchema,
+    asyn_db: Session = Depends(get_db),
+    asyn_cache: RedisConn = Depends(get_cache)
+):
     """Создать подменю"""
-    response_data = CrudSubMenu.create_sub_menu_db(menu_id, request_data)
-    CacheSubMenu.clear_cache(menu_id)
+    response_data = await CrudSubMenu.create_sub_menu_db(menu_id, request_data, asyn_db)
+    await CacheSubMenu.clear_cache(asyn_cache, menu_id)
     return response_data
 
 
@@ -133,14 +173,18 @@ def post_sub_menu(menu_id: int, request_data: RequestPostRestaurantSubMenuSchema
     '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}',
     response_model=Optional[ResponsePatchRestaurantSubMenuSchema | ErrorSchema],
 )
-def patch_sub_menu(
-    menu_id: int, sub_menu_id: int, request_data: RequestPatchRestaurantSubMenuSchema
+async def patch_sub_menu(
+    menu_id: int,
+    sub_menu_id: int,
+    request_data: RequestPatchRestaurantSubMenuSchema,
+    asyn_db: Session = Depends(get_db),
+    asyn_cache: RedisConn = Depends(get_cache)
 ):
     """Изменить подменю"""
-    response_data = CrudSubMenu.edit_sub_menu_db(menu_id, sub_menu_id, request_data)
+    response_data = await CrudSubMenu.edit_sub_menu_db(menu_id, sub_menu_id, request_data, asyn_db)
     if response_data == 'NotFound':
         return JSONResponse(content={'detail': 'submenu not found'}, status_code=404)
-    CacheSubMenu.clear_cache(menu_id, sub_menu_id)
+    await CacheSubMenu.clear_cache(asyn_cache, menu_id, sub_menu_id)
     return response_data
 
 
@@ -148,10 +192,15 @@ def patch_sub_menu(
     '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}',
     response_model=DeleteRestaurantSubMenuSchema,
 )
-def delete_sub_menu(menu_id: int, sub_menu_id: int):
+async def delete_sub_menu(
+    menu_id: int,
+    sub_menu_id: int,
+    asyn_db: Session = Depends(get_db),
+    asyn_cache: RedisConn = Depends(get_cache)
+):
     """Удалить подменю"""
-    response_data = CrudSubMenu.delete_sub_menu_db(menu_id, sub_menu_id)
-    CacheSubMenu.clear_cache(menu_id, sub_menu_id)
+    response_data = await CrudSubMenu.delete_sub_menu_db(menu_id, sub_menu_id, asyn_db)
+    await CacheSubMenu.clear_cache(asyn_cache, menu_id, sub_menu_id)
     return response_data
 
 
@@ -162,12 +211,17 @@ def delete_sub_menu(menu_id: int, sub_menu_id: int):
     '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes',
     response_model=List[GetRestaurantDishSchema],
 )
-def get_list_dish(menu_id: int, sub_menu_id: int):
+async def get_list_dish(
+    menu_id: int,
+    sub_menu_id: int,
+    asyn_db: Session = Depends(get_db),
+    asyn_cache: RedisConn = Depends(get_cache)
+):
     """Получить список блюд"""
-    if CacheDish.check_cache(menu_id, sub_menu_id):
-        return CacheDish.get_dish(menu_id, sub_menu_id)
-    response_data = CrudDish.get_dish_db(menu_id, sub_menu_id)
-    return CacheDish.set_dish(response_data, menu_id, sub_menu_id)
+    if await CacheDish.check_cache(asyn_cache, menu_id, sub_menu_id):
+        return await CacheDish.get_dish(asyn_cache, menu_id, sub_menu_id)
+    response_data = await CrudDish.get_dish_db(menu_id, sub_menu_id, asyn_db)
+    return await CacheDish.set_dish(asyn_cache, response_data, menu_id, sub_menu_id)
 
 
 @app.get(
@@ -175,14 +229,20 @@ def get_list_dish(menu_id: int, sub_menu_id: int):
     response_model=GetRestaurantDishSchema,
     responses={404: {'model': NotFoundDish}},
 )
-def get_dish(menu_id: int, sub_menu_id: int, dish_id: int):
+async def get_dish(
+    menu_id: int,
+    sub_menu_id: int,
+    dish_id: int,
+    asyn_db: Session = Depends(get_db),
+    asyn_cache: RedisConn = Depends(get_cache)
+):
     """Получить определенное блюдо"""
-    if CacheDish.check_cache(menu_id, sub_menu_id, dish_id):
-        return CacheDish.get_dish(menu_id, sub_menu_id, dish_id)
-    response_data = CrudDish.get_dish_db(menu_id, sub_menu_id, dish_id)
+    if await CacheDish.check_cache(asyn_cache, menu_id, sub_menu_id, dish_id):
+        return await CacheDish.get_dish(asyn_cache, menu_id, sub_menu_id, dish_id)
+    response_data = await CrudDish.get_dish_db(menu_id, sub_menu_id, asyn_db, dish_id)
     if response_data == 'NotFound':
         return JSONResponse(content={'detail': 'dish not found'}, status_code=404)
-    return CacheDish.set_dish(response_data, menu_id, sub_menu_id, dish_id)
+    return await CacheDish.set_dish(asyn_cache, response_data, menu_id, sub_menu_id, dish_id)
 
 
 @app.post(
@@ -190,12 +250,16 @@ def get_dish(menu_id: int, sub_menu_id: int, dish_id: int):
     status_code=201,
     response_model=ResponsePostRestaurantDishSchema,
 )
-def post_dish(
-    menu_id: int, sub_menu_id: int, request_data: RequestPostRestaurantDishSchema
+async def post_dish(
+    menu_id: int,
+    sub_menu_id: int,
+    request_data: RequestPostRestaurantDishSchema,
+    asyn_db: Session = Depends(get_db),
+    asyn_cache: RedisConn = Depends(get_cache)
 ):
     """Создать блюдо"""
-    response_data = CrudDish.create_dish_db(menu_id, sub_menu_id, request_data)
-    CacheDish.clear_cache(menu_id, sub_menu_id)
+    response_data = await CrudDish.create_dish_db(menu_id, sub_menu_id, request_data, asyn_db)
+    await CacheDish.clear_cache(asyn_cache, menu_id, sub_menu_id)
     return response_data
 
 
@@ -203,17 +267,19 @@ def post_dish(
     '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes/{dish_id}',
     response_model=Optional[ResponsePatchRestaurantDishSchema | ErrorSchema],
 )
-def patch_dish(
+async def patch_dish(
     menu_id: int,
     sub_menu_id: int,
     dish_id: int,
     request_data: RequestPatchRestaurantDishSchema,
+    asyn_db: Session = Depends(get_db),
+    asyn_cache: RedisConn = Depends(get_cache)
 ):
     """Изменить блюдо"""
-    response_data = CrudDish.edit_dish_db(menu_id, sub_menu_id, dish_id, request_data)
+    response_data = await CrudDish.edit_dish_db(menu_id, sub_menu_id, dish_id, request_data, asyn_db)
     if response_data == 'NotFound':
         return JSONResponse(content={'detail': 'dish not found'}, status_code=404)
-    CacheDish.clear_cache(menu_id, sub_menu_id, dish_id)
+    await CacheDish.clear_cache(asyn_cache, menu_id, sub_menu_id, dish_id)
     return response_data
 
 
@@ -221,8 +287,14 @@ def patch_dish(
     '/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes/{dish_id}',
     response_model=DeleteRestaurantDishSchema,
 )
-def delete_dish(menu_id: int, sub_menu_id: int, dish_id: int):
+async def delete_dish(
+    menu_id: int,
+    sub_menu_id: int,
+    dish_id: int,
+    asyn_db: Session = Depends(get_db),
+    asyn_cache: RedisConn = Depends(get_cache)
+):
     """Удалить блюдо"""
-    response_data = CrudDish.delete_dish_db(menu_id, sub_menu_id, dish_id)
-    CacheDish.clear_cache(menu_id, sub_menu_id, dish_id)
+    response_data = await CrudDish.delete_dish_db(menu_id, sub_menu_id, dish_id, asyn_db)
+    await CacheDish.clear_cache(asyn_cache, menu_id, sub_menu_id, dish_id)
     return response_data
