@@ -276,7 +276,8 @@ async def patch_dish(
     asyn_cache: RedisConn = Depends(get_cache)
 ):
     """Изменить блюдо"""
-    response_data = await CrudDish.edit_dish_db(menu_id, sub_menu_id, dish_id, request_data, asyn_db)
+    response_data = await CrudDish.edit_dish_db(menu_id, sub_menu_id, dish_id,
+                                                request_data, asyn_db)
     if response_data == 'NotFound':
         return JSONResponse(content={'detail': 'dish not found'}, status_code=404)
     await CacheDish.clear_cache(asyn_cache, menu_id, sub_menu_id, dish_id)

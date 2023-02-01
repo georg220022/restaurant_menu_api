@@ -1,4 +1,4 @@
-import sys
+import sys, os
 from logging.config import fileConfig
 
 from alembic import context
@@ -7,8 +7,19 @@ from sqlalchemy import engine_from_config, pool
 sys.path = ["", ".."] + sys.path[1:]
 
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+DB_PASS = os.getenv("POSTGRES_PASSWORD")
+DB_USER = os.getenv("POSTGRES_USER")
+DB_NAME = os.getenv("POSTGRES_DB")
+URL_DB = os.getenv("URL_DB")
+
+POSTGRE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{URL_DB}:5432/{DB_NAME}"
+
 from settings.base import Base
-from settings.settings import POSTGRE_URL
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

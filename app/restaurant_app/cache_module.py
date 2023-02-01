@@ -123,7 +123,7 @@ class CacheSubMenu:
         asyn_cache,
         menu_id: int,
         sub_menu_id: Optional[int | None] = None
-    )-> None:
+    ) -> None:
         """
         Метод очистки кеша, если изменилось/удалилось/добавилось подменю.
         При вызове этого метода так же очищается некоторый
@@ -204,8 +204,7 @@ class CacheDish:
             return await asyn_cache.hgetall(
                 f'menu_{menu_id}_sub_menus_{sub_menu_id}_dish_{dish_id}'
             )
-        return json.loads(await asyn_cache.get(f'menu_{menu_id}_sub_menus_{sub_menu_id}_dish')
-        )
+        return json.loads(await asyn_cache.get(f'menu_{menu_id}_sub_menus_{sub_menu_id}_dish'))
 
     @staticmethod
     async def clear_cache(
