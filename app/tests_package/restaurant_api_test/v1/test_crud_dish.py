@@ -3,18 +3,14 @@
 #
 #from .test_crud_menu import DATA as menu_data
 #from .test_crud_sub_menu import DATA as sub_menu_data
-
-from http import client
+#from .conftest import async_app_client, event_loop
 from api.v1.app import app as apps
 #from fastapi.testclient import TestClient
-import asyncio
-from httpx import AsyncClient
+#import asyncio
+#from httpx import AsyncClient
 #from tests_package.restaurant_api_test.v1.lol.test_crud_menu import DATA as menu_data
 #from tests_package.restaurant_api_test.v1.lol.test_crud_sub_menu import DATA as sub_menu_data
 import pytest
-#from say import say
-
-import pytest_asyncio
 menu_data = dict(title='Test title menu', description='Test description menu')
 sub_menu_data = dict(title='Updated test title menu', description ='Updated test description menu')
 
@@ -26,21 +22,23 @@ UPDATED_DATA = {
     }
 
 
-clients = AsyncClient(app=apps)
+
 
 class TestGroupDish:
+    
+    #clients = AsyncClient(app=apps)
 
-    @pytest.yield_fixture(scope='class')
-    def event_loop(request):
-        loop = asyncio.get_event_loop_policy().new_event_loop()
-        yield loop
-        loop.close()
+    #@pytest.yield_fixture(scope='class')
+    #def event_loop(request):
+    #    loop = asyncio.get_event_loop_policy().new_event_loop()
+    #    yield loop
+    #    loop.close()
 
 
-    @pytest.fixture #scope="session")
-    async def async_app_client(self):
-        async with AsyncClient(app=apps) as client:
-            yield client
+    #@pytest.fixture #scope="session")
+    #async def async_app_client(self):
+    #    async with AsyncClient(app=apps) as client:
+    #        yield client
 
     def setup_class(self):
         self.url = None
@@ -49,17 +47,16 @@ class TestGroupDish:
 
     @pytest.mark.asyncio
     async def test_make_valid_url(self, async_app_client):
-        #async with AsyncClient(app=apps) as async_app_client:
-            # Создадим в БД меню, что бы переменная url была валидна
-            response_post_menu = await async_app_client.post('http://test/api/v1/menus', json=menu_data)
-            # Получим id созданного меню
-            menu_id = response_post_menu.json()["id"]
-            # Создадим подменю
-            response_post_sub_menu = await async_app_client.post(f'http://test/api/v1/menus/{menu_id}/submenus', json=sub_menu_data)
-            # Получим id созданного блюда
-            sub_menu_id = response_post_sub_menu.json()["id"]
-            # Прокинем url в self
-            type(self).url = f"http://test/api/v1/menus/{str(menu_id)}/submenus/{str(sub_menu_id)}/dishes"
+        # Создадим в БД меню, что бы переменная url была валидна
+        response_post_menu = await async_app_client.post('http://test/api/v1/menus', json=menu_data)
+        # Получим id созданного меню
+        menu_id = response_post_menu.json()["id"]
+        # Создадим подменю
+        response_post_sub_menu = await async_app_client.post(f'http://test/api/v1/menus/{menu_id}/submenus', json=sub_menu_data)
+        # Получим id созданного блюда
+        sub_menu_id = response_post_sub_menu.json()["id"]
+        # Прокинем url в self
+        type(self).url = f"http://test/api/v1/menus/{str(menu_id)}/submenus/{str(sub_menu_id)}/dishes"
     
     @pytest.mark.asyncio
     async def test_create_dish(self, async_app_client):
