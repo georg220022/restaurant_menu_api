@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from redis import asyncio as aredis
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-# from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
@@ -21,7 +20,7 @@ POSTGRE_URL = f'postgresql+asyncpg://{DB_USER}:{DB_PASS}@{URL_DB}:5432/{DB_NAME}
 
 engine = create_async_engine(POSTGRE_URL, echo=False)
 
-# Base = declarative_base()
+
 cache_redis = aredis.from_url(REDIS_URL, encoding='utf-8', decode_responses=True)
 db_async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

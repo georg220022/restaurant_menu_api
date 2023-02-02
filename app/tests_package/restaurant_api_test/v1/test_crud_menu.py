@@ -16,15 +16,16 @@ class TestGroupMenu:
     async def test_post_menu(self, async_app_client):
         '''Тест создания меню'''
         response = await async_app_client.post(self.url, json=DATA)
-        # При создании поста ответ должен быть НЕ в list
+        # При создании поста ответ должен быть в dict
         assert type(response.json()) == dict
         # Проверка title
         assert response.json()['title'] == DATA['title']
         # Проверка description
         assert response.json()['description'] == DATA['description']
-        # id должен быть строкой
         menu_id = response.json()['id']
+        # id должен быть строкой
         assert type(menu_id) == str
+        # Прокинем полный урл с id в self
         type(self).url_with_id = self.url + '/' + menu_id
         # При запуске тестов нет подменю
         assert response.json()['submenus_count'] == 0

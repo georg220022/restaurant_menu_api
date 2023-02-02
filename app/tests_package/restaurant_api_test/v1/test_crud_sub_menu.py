@@ -18,6 +18,7 @@ class TestGroupSubMenu:
 
     @pytest.mark.asyncio
     async def test_make_valid_url(self, async_app_client):
+        '''Тест + создание валидного URL'''
         # Создадим в БД меню, что бы переменная url была валидна
         response_post_menu = await async_app_client.post(
             'http://test/api/v1/menus', json=menu_data
@@ -37,9 +38,10 @@ class TestGroupSubMenu:
         assert response.json()['title'] == DATA['title']
         # Проверка description
         assert response.json()['description'] == DATA['description']
-        # id должен быть строкой
         sub_menu_id = response.json()['id']
+        # Прокинем полный урл с id в self
         type(self).url_with_id = self.url + '/' + sub_menu_id
+        # id должен быть строкой
         assert type(sub_menu_id) == str
         # При запуске тестов нет блюд
         assert response.json()['dishes_count'] == 0
@@ -71,6 +73,7 @@ class TestGroupSubMenu:
 
     @pytest.mark.asyncio
     async def test_get_list_sub_menu(self, async_app_client):
+        '''Тест получения списка подменю'''
         response = await async_app_client.get(self.url)
         # При запросе 1 подменю ответ должен быть в list
         assert type(response.json()) == list
@@ -87,6 +90,7 @@ class TestGroupSubMenu:
 
     @pytest.mark.asyncio
     async def test_patch_sub_menu(self, async_app_client):
+        '''Тест обновления подменю'''
         response = await async_app_client.patch(self.url_with_id, json=UPDATED_DATA)
         # Пытаемся изменить не существующее подменю
         response_404 = await async_app_client.patch(
@@ -100,7 +104,6 @@ class TestGroupSubMenu:
         assert response.json()['description'] == UPDATED_DATA['description']
         # При получении 1 подменю возвращается статус-код 200
         assert response.status_code == 200
-
         # Ответ на попытку изменения не существующего подменю
         assert response_404.json() == dict(detail='submenu not found')
         # 404 статус код для не существующего

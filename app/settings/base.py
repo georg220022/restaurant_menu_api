@@ -1,1 +1,1 @@
-from restaurant_app.models import Base
+from restaurant_app.models import Base # NOQA
