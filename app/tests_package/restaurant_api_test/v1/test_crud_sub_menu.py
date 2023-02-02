@@ -1,54 +1,35 @@
-from api.v1.app import app as apps
-import asyncio
-from httpx import AsyncClient
 import pytest
 
-import pytest_asyncio
 from .test_crud_menu import DATA as menu_data
 
 DATA = {'title': 'Test dish', 'description': 'Test dish description', 'price': '12.5'}
 UPDATED_DATA = {
-        'title': 'Updated test dish',
-        'description': 'Updated test dish description',
-        'price': '25.48',
-    }
-
-
+    'title': 'Updated test dish',
+    'description': 'Updated test dish description',
+    'price': '25.48',
+}
 
 
 class TestGroupSubMenu:
-    
-    #clients = AsyncClient(app=apps)
-
-    #@pytest.yield_fixture(scope='class')
-    #def event_loop(request):
-    ##    loop = asyncio.get_event_loop_policy().new_event_loop()
-    #    yield loop
-    #    loop.close()
-
-
-    #@pytest.fixture #scope="session")
-    #async def async_app_client(self):
-    #    async with AsyncClient(app=apps) as client:
-    #        yield client
 
     def setup_class(self):
         self.url = None
         self.url_with_id = None
 
-
     @pytest.mark.asyncio
     async def test_make_valid_url(self, async_app_client):
         # Создадим в БД меню, что бы переменная url была валидна
-        response_post_menu = await async_app_client.post('http://test/api/v1/menus', json=menu_data)
+        response_post_menu = await async_app_client.post(
+            'http://test/api/v1/menus', json=menu_data
+        )
         # Получим id созданного меню
-        menu_id = response_post_menu.json()["id"]
+        menu_id = response_post_menu.json()['id']
         # Прокинем url в self
-        type(self).url = f"http://test/api/v1/menus/{str(menu_id)}/submenus"
-    
+        type(self).url = f'http://test/api/v1/menus/{str(menu_id)}/submenus'
+
     @pytest.mark.asyncio
     async def test_post_sub_menu(self, async_app_client):
-        """Тест создания подменю"""
+        '''Тест создания подменю'''
         response = await async_app_client.post(self.url, json=DATA)
         # При создании подменю ответ должен быть НЕ в list
         assert type(response.json()) == dict
@@ -64,11 +45,10 @@ class TestGroupSubMenu:
         assert response.json()['dishes_count'] == 0
         # При создании возвращается статус-код 201
         assert response.status_code == 201
-        
 
     @pytest.mark.asyncio
     async def test_get_sub_menu(self, async_app_client):
-        """Тест получения 1 подменю"""
+        '''Тест получения 1 подменю'''
         response = await async_app_client.get(self.url_with_id)
         # Пытаемся взять не существующее подменю
         response_404 = await async_app_client.get(self.url + '/2213123')
@@ -104,12 +84,14 @@ class TestGroupSubMenu:
         assert response.json()[0]['dishes_count'] == 0
         # При получении списка подменю возвращается статус-код 200
         assert response.status_code == 200
-    
+
     @pytest.mark.asyncio
     async def test_patch_sub_menu(self, async_app_client):
         response = await async_app_client.patch(self.url_with_id, json=UPDATED_DATA)
         # Пытаемся изменить не существующее подменю
-        response_404 = await async_app_client.patch(self.url + '/34234234', json=UPDATED_DATA)
+        response_404 = await async_app_client.patch(
+            self.url + '/34234234', json=UPDATED_DATA
+        )
         # При редактировании 1 подменю ответ должен быть НЕ в list
         assert type(response.json()) == dict
         # Проверка title
@@ -126,14 +108,15 @@ class TestGroupSubMenu:
 
     @pytest.mark.asyncio
     async def test_delete_sub_menu(self, async_app_client):
-        """Тест удаления подменю"""
+        '''Тест удаления подменю'''
         response_data = {'status': True, 'message': 'The submenu has been deleted'}
         response = await async_app_client.delete(self.url_with_id)
         assert response.json() == response_data
         assert response.status_code == 200
+
     @pytest.mark.asyncio
     async def test_get_deleted_sub_menu(self, async_app_client):
-        """Попытка получить удаленное подменю"""
+        '''Попытка получить удаленное подменю'''
         response = await async_app_client.get(self.url_with_id)
         assert response.status_code == 404
         assert response.json() == dict(detail='submenu not found')

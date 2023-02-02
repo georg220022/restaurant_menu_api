@@ -1,8 +1,4 @@
-from api.v1.app import app as apps
-from fastapi.testclient import TestClient
 import pytest
-client = TestClient(apps)
-URL = '/api/v1/menus'
 
 DATA = {'title': 'Test title menu', 'description': 'Test description menu'}
 UPDATED_DATA = {
@@ -13,21 +9,12 @@ UPDATED_DATA = {
 
 class TestGroupMenu:
     def setup_class(self):
-        self.url = "http://test/api/v1/menus"
+        self.url = 'http://test/api/v1/menus'
         self.url_with_id = None
 
-    
-    #async def test_make_valid_url(self, async_app_client):
-    #    # Создадим в БД меню, что бы переменная url была валидна
-    #    response_post_menu = await async_app_client.post('http://test/api/v1/menus', json=DATA)
-    #    # Получим id созданного меню
-    #    menu_id = response_post_menu.json()["id"]
-    #    # Прокинем url в self
-    #    type(self).url = f"http://test/api/v1/menus/{str(menu_id)}/submenus"
-    
     @pytest.mark.asyncio
     async def test_post_menu(self, async_app_client):
-        """Тест создания меню"""
+        '''Тест создания меню'''
         response = await async_app_client.post(self.url, json=DATA)
         # При создании поста ответ должен быть НЕ в list
         assert type(response.json()) == dict
@@ -48,7 +35,7 @@ class TestGroupMenu:
 
     @pytest.mark.asyncio
     async def test_get_menu(self, async_app_client):
-        """Тест получения 1 меню"""
+        '''Тест получения 1 меню'''
         response = await async_app_client.get(self.url_with_id)
         # Пытаемся взять не существующее меню
         response_404 = await async_app_client.get(self.url + '/2768213')
@@ -73,7 +60,7 @@ class TestGroupMenu:
 
     @pytest.mark.asyncio
     async def test_get_list_menu(self, async_app_client):
-        """Тест получения списка меню"""
+        '''Тест получения списка меню'''
         response = await async_app_client.get(self.url)
         # При запросе 1 меню ответ должен быть в list
         assert type(response.json()) == list
@@ -92,10 +79,12 @@ class TestGroupMenu:
 
     @pytest.mark.asyncio
     async def test_patch_menu(self, async_app_client):
-        """Тест изменения меню"""
+        '''Тест изменения меню'''
         response = await async_app_client.patch(self.url_with_id, json=UPDATED_DATA)
         # Пытаемся изменить не существующее меню
-        response_404 = await async_app_client.patch(self.url + '123123123124', json=UPDATED_DATA)
+        response_404 = await async_app_client.patch(
+            self.url + '1233124', json=UPDATED_DATA
+        )
         # При редактировании 1 меню ответ должен быть НЕ в list
         assert type(response.json()) == dict
         # Проверка title
@@ -111,7 +100,7 @@ class TestGroupMenu:
 
     @pytest.mark.asyncio
     async def test_delete_menu(self, async_app_client):
-        """Тест удаления меню"""
+        '''Тест удаления меню'''
         response_data = {'status': True, 'message': 'The menu has been deleted'}
         response = await async_app_client.delete(self.url_with_id)
         assert response.json() == response_data
@@ -119,7 +108,7 @@ class TestGroupMenu:
 
     @pytest.mark.asyncio
     async def test_get_deleted_menu(self, async_app_client):
-        """Попытка получить удаленное меню"""
+        '''Попытка получить удаленное меню'''
         response = await async_app_client.get(self.url_with_id)
         assert response.status_code == 404
         assert response.json() == dict(detail='menu not found')

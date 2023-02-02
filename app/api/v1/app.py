@@ -1,14 +1,13 @@
 from typing import Any, List, Optional
 
-from sqlalchemy.orm import Session
-from settings.db import get_db, get_cache
-from fastapi import Depends
-from redis.asyncio import Connection as RedisConn
-
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import JSONResponse
+from redis.asyncio import Connection as RedisConn
+from sqlalchemy.orm import Session
+
 from restaurant_app.cache_module import CacheDish, CacheMenu, CacheSubMenu
 from restaurant_app.crud import CrudDish, CrudMenu, CrudSubMenu
+from settings.db import get_cache, get_db
 
 from .schemas import (DeleteRestaurantDishSchema,
                       DeleteRestaurantSubMenuSchema, DeleteResturantMenuSchema,
