@@ -1,10 +1,14 @@
 import decimal
 from typing import Optional
-from settings.settings import engine
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import text
-from .models import RestaurantDish, RestaurantMenu, RestaurantSubMenu, menus, sub_menus, dish
+
 from asyncpg import PostgresError
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
+
+from settings.settings import engine
+
+from .models import (RestaurantDish, RestaurantMenu, RestaurantSubMenu, dish,
+                     menus, sub_menus)
 
 
 class CrudMenu:
@@ -26,7 +30,7 @@ class CrudMenu:
                 group by menu_id) rd on rd.menu_id = rm.id
             """
         if menu_id:
-            query_str += f"\nwhere rm.id={menu_id}"
+            query_str += f'\nwhere rm.id={menu_id}'
         async with engine.begin() as conn:
             query = await conn.execute(text(query_str))
         data = []
@@ -43,7 +47,7 @@ class CrudMenu:
             return data
         if not menu_id:
             return []
-        return "NotFound"
+        return 'NotFound'
 
     @staticmethod
     async def create_menu_db(
@@ -92,7 +96,7 @@ class CrudMenu:
         except PostgresError as exc:
             asyn_db.rollback()
             raise exc
-        return {"status": True, "message": "The menu has been deleted"}
+        return {'status': True, 'message': 'The menu has been deleted'}
 
 
 class CrudSubMenu:
@@ -111,7 +115,7 @@ class CrudSubMenu:
             where rsm.menu_id = {menu_id}
         """
         if sub_menu_id:
-            query_str += f" AND rsm.id={sub_menu_id}"
+            query_str += f' AND rsm.id={sub_menu_id}'
         async with engine.begin() as conn:
             query = await conn.execute(text(query_str))
         data = []
@@ -128,7 +132,7 @@ class CrudSubMenu:
             return data
         if not sub_menu_id:
             return []
-        return "NotFound"
+        return 'NotFound'
 
     @staticmethod
     async def create_sub_menu_db(
@@ -176,7 +180,7 @@ class CrudSubMenu:
         except PostgresError as exc:
             asyn_db.rollback()
             raise exc
-        return {"status": True, "message": "The submenu has been deleted"}
+        return {'status': True, 'message': 'The submenu has been deleted'}
 
 
 """Блюда"""
@@ -215,7 +219,7 @@ class CrudDish:
             return data
         if not dish_id:
             return []
-        return "NotFound"
+        return 'NotFound'
 
     @staticmethod
     async def create_dish_db(
@@ -269,4 +273,4 @@ class CrudDish:
         except PostgresError as exc:
             asyn_db.rollback()
             raise exc
-        return {"status": True, "message": "The submenu has been deleted"}
+        return {'status': True, 'message': 'The submenu has been deleted'}

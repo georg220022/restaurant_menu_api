@@ -2,7 +2,6 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-
 """СХЕМЫ ОШИБОК / 404"""
 
 
