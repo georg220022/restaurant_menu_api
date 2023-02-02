@@ -16,6 +16,7 @@ class CrudMenu:
     async def get_menu_db(
         menu_id: Optional[int] = None
     ) -> Optional[str | list | dict]:
+        '''Метод возвращающий весь список меню, либо определенную запись меню по id'''
         query_str = """
             select id, title, description, coalesce(sc, 0) as sub_menu_count, coalesce(dc, 0)
                 as dishes_count
@@ -54,6 +55,7 @@ class CrudMenu:
         data,
         asyn_db
     ) -> dict:
+        '''Метод создания меню'''
         obj = RestaurantMenu(**data.dict())
         try:
             asyn_db.add(obj)
@@ -75,6 +77,7 @@ class CrudMenu:
         data,
         asyn_db
     ):
+        '''Метод редактирования меню'''
         query = (menus.update().where(menus.c.id == menu_id).
                  values(title=data.title, description=data.description))
         try:
@@ -90,6 +93,7 @@ class CrudMenu:
         menu_id,
         asyn_db
     ):
+        '''Метод удаления меню'''
         try:
             await asyn_db.execute(menus.delete().where(menus.c.id == menu_id))
             await asyn_db.commit()
@@ -105,6 +109,7 @@ class CrudSubMenu:
         menu_id,
         sub_menu_id=None
     ):
+        '''Метод получения списка подменю либо определенного меню по id'''
         query_str = f"""
             select id, title, description, coalesce(dc, 0) as dishes_count
             from "RestaurantSubMenu" rsm
@@ -140,6 +145,7 @@ class CrudSubMenu:
         data,
         asyn_db
     ):
+        '''Метод создания подменю'''
         obj = RestaurantSubMenu(**data.dict(), menu_id=menu_id)
         try:
             asyn_db.add(obj)
@@ -158,6 +164,7 @@ class CrudSubMenu:
         data,
         asyn_db
     ):
+        '''Метод редактирования подменю'''
         query = (sub_menus.update().where(sub_menus.c.id == sub_menu_id).
                  values(title=data.title, description=data.description))
         try:
@@ -174,6 +181,7 @@ class CrudSubMenu:
         sub_menu_id,
         asyn_db
     ):
+        '''Метод удаления подменю'''
         try:
             await asyn_db.execute(sub_menus.delete().where(sub_menus.c.id == sub_menu_id))
             await asyn_db.commit()
@@ -194,6 +202,7 @@ class CrudDish:
         asyn_db,
         dish_id=None
     ):
+        '''Метод получения списка блюд либо определенного блюда по id'''
         data = []
         if not dish_id:
             for obj in await asyn_db.execute(dish.select()):
@@ -228,6 +237,7 @@ class CrudDish:
         data,
         asyn_db
     ):
+        '''Метод создания блюда'''
         obj = RestaurantDish(**data.dict(), sub_menu_id=sub_menu_id)
         try:
             asyn_db.add(obj)
@@ -250,6 +260,7 @@ class CrudDish:
         data,
         asyn_db
     ):
+        '''Метод редактирования блюда'''
         query = (dish.update().where(dish.c.id == dish_id).
                  values(title=data.title, description=data.description, price=data.price))
         try:
@@ -267,6 +278,7 @@ class CrudDish:
         dish_id,
         asyn_db
     ):
+        '''Метод удаления блюда'''
         try:
             await asyn_db.execute(dish.delete().where(dish.c.id == dish_id))
             await asyn_db.commit()

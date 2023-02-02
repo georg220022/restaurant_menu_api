@@ -2,18 +2,21 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-"""СХЕМЫ ОШИБОК / 404"""
+"""СХЕМЫ ОШИБОК / 404"""  # Схемы ошибок составлены на будущее
 
 
 class NotFoundMenu(BaseModel):
+    """Схема ошибки меню"""
     detail: str
 
 
 class NotFoundSubMenu(NotFoundMenu):
+    """Схема ошибки подменю"""
     pass
 
 
 class NotFoundDish(NotFoundMenu):
+    """Схема ошибки блюда"""
     pass
 
 

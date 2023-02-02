@@ -19,6 +19,7 @@ class TestGroupDish:
 
     @pytest.mark.asyncio
     async def test_make_valid_url(self, async_app_client):
+        '''Тест + создание валидного URL'''
         # Создадим в БД меню, что бы переменная url была валидна
         response_post_menu = await async_app_client.post(
             'http://test/api/v1/menus', json=menu_data
@@ -38,16 +39,18 @@ class TestGroupDish:
 
     @pytest.mark.asyncio
     async def test_create_dish(self, async_app_client):
+        '''Тест создания блюда'''
         response = await async_app_client.post(self.url, json=DATA)
-        # При создании блюдо ответ должен быть НЕ в list
+        # При создании блюда ответ должен быть в dict
         assert type(response.json()) == dict
         # Проверка title
         assert response.json()['title'] == DATA['title']
         # Проверка description
         assert response.json()['description'] == DATA['description']
-        # id должен быть строкой
         dish_id = response.json()['id']
+        # id должен быть строкой
         assert type(dish_id) == str
+        # Прокинем полный урл с id в self
         type(self).url_with_id = self.url + '/' + dish_id
         # Проверяем цену
         assert response.json()['price'] == DATA['price']
@@ -56,7 +59,9 @@ class TestGroupDish:
 
     @pytest.mark.asyncio
     async def test_get_dish(self, async_app_client):
+        '''Тест получения блюда'''
         response = await async_app_client.get(self.url_with_id)
+        # Пытаемся взять не существующее блюдо
         response_404 = await async_app_client.get(self.url + '/2768')
         # При запросе 1 блюдо ответ должен быть НЕ в list
         assert type(response.json()) == dict
@@ -68,8 +73,6 @@ class TestGroupDish:
         assert type(response.json()['id']) == str
         # При получении 1 блюдо возвращается статус-код 200
         assert response.status_code == 200
-        # Пытаемся взять не существующее блюдо
-
         # Ответ для не существующего блюдо
         assert response_404.json() == dict(detail='dish not found')
         # 404 статус код для не существующего
@@ -94,6 +97,7 @@ class TestGroupDish:
     async def test_patch_dish(self, async_app_client):
         '''Тест изменения блюда'''
         response = await async_app_client.patch(self.url_with_id, json=UPDATED_DATA)
+        # Пытаемся изменить не существующее блюдо
         response_404 = await async_app_client.patch(
             self.url + '/4353', json=UPDATED_DATA
         )
@@ -105,8 +109,6 @@ class TestGroupDish:
         assert response.json()['description'] == UPDATED_DATA['description']
         # При получении 1 блюдо возвращается статус-код 200
         assert response.status_code == 200
-        # Пытаемся изменить не существующее блюдо
-
         # Ответ на попытку изменения не существующего блюдо
         assert response_404.json() == dict(detail='dish not found')
         # 404 статус код для не существующего
