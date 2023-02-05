@@ -197,7 +197,7 @@ class CacheDish:
     @staticmethod
     async def clear_cache(
         asyn_cache, menu_id: int, sub_menu_id: int, dish_id: int | None | None = None
-    ) -> None:
+    ) -> None | str | None:
         """
         Метод очистки кеша, если изменилось/удалилось/добавилось блюдо.
         При вызове этого метода так же очищается некоторый

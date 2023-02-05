@@ -1,5 +1,5 @@
 from asyncpg import PostgresError
-from restaurant_app.models import dish, menus, sub_menus
+from .models import dish, menus, sub_menus
 from sqlalchemy.exc import IntegrityError
 
 DATA_MENU = [

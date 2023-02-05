@@ -11,7 +11,7 @@ from restaurant_app.tasks import app_celery, start_create_xlsx
 from settings.db import get_cache, get_db
 from sqlalchemy.orm import Session
 
-from .load_data import LoadData
+from restaurant_app.load_data import LoadData
 from .schemas import (
     DeleteRestaurantDishSchema,
     DeleteRestaurantSubMenuSchema,
@@ -35,11 +35,16 @@ from .schemas import (
     ResponsePostRestaurantDishSchema,
     ResponsePostRestaurantMenuSchema,
     ResponsePostRestaurantSubMenu,
+    ResponseLoadTestData,
+    ResponseGetStatusTask,
+    ResponseCreateXlsxMenu,
+    ResponseGetStatusTaskSucces,
 )
 
 app = FastAPI()
 router = APIRouter()
 
+BASE_URL = "http://localhost:8000/api/v1"
 
 """ОСНОВНОЕ МЕНЮ"""
 
@@ -305,8 +310,15 @@ async def delete_dish(
     return response_data
 
 
-@app.get("/api/v1/load_data")
+"""ГЕНЕРАЦИЯ/ПОЛУЧЕНИЕ .XLSX МЕНЮ"""
+
+
+@app.get(
+    "/api/v1/load_data",
+    responses={200: {"model": ResponseLoadTestData}, 500: {"model": ErrorSchema}},
+)
 async def load_data_to_db(asyn_db: Session = Depends(get_db)):
+    """Загрузка тестовых данных"""
     bool_load = await LoadData.to_db(asyn_db)
     if bool_load:
         return JSONResponse(content={"detail": "Данные загружены"}, status_code=200)
@@ -315,32 +327,42 @@ async def load_data_to_db(asyn_db: Session = Depends(get_db)):
     )
 
 
-@app.post("/api/v1/create_xlsx")
+@app.post(
+    "/api/v1/create_xlsx",
+    responses={202: {"model": ResponseCreateXlsxMenu}},
+    status_code=202,
+)
 async def create_full_menu_to_xlsx(asyn_cache: RedisConn = Depends(get_cache)):
+    """Запуск задания создания .xlsx"""
     unique_name_file = str(uuid4())
     task_id = str(start_create_xlsx.delay(unique_name_file))
     await asyn_cache.set(task_id, unique_name_file)
     info_data = {
-        "detail": f"Принято, GET запрос узнать статус задачи: 'http://localhost:8000/api/v1/status/{task_id}'"
+        "detail": f"Принято, GET запрос узнать статус задачи: '{BASE_URL}/status/{task_id}'"
     }
     return JSONResponse(content=info_data, status_code=202)
 
 
-@app.get("/api/v1/status/{task_id}")
-async def get_status_task(task_id):
+@app.get(
+    "/api/v1/status/{task_id}",
+    responses={
+        206: {"model": ResponseGetStatusTask},
+        200: {"model": ResponseGetStatusTaskSucces},
+    },
+    status_code=200,
+)
+async def get_status_task(task_id: str):
+    """Проверка статуса задачи"""
     status_task = app_celery.AsyncResult(task_id).status
     info_data = {"status task": status_task}
     if status_task == "SUCCESS":
-        info_data.update(
-            {
-                "Ссылка для скачивания": f"http://localhost:8000/api/v1/download/{task_id}"
-            }
-        )
+        info_data.update({"Download link": f"{BASE_URL}/download/{task_id}"})
     return JSONResponse(content=info_data, status_code=200)
 
 
-@app.get("/api/v1/download/{task_id}")
-async def download(task_id, asyn_cache: RedisConn = Depends(get_cache)):
+@app.get("/api/v1/download/{task_id}", status_code=200)
+async def download(task_id: str, asyn_cache: RedisConn = Depends(get_cache)):
+    """Загрузка .xlsx меню"""
     name_file = await asyn_cache.get(str(task_id))
     if name_file:
         path_file = f"storage/{name_file}.xlsx"
@@ -348,6 +370,6 @@ async def download(task_id, asyn_cache: RedisConn = Depends(get_cache)):
             return FileResponse(
                 path=path_file,
                 filename="FullMenu.xlsx",
-                media_type="application/octet-stream",
+                media_type="multipart/form-data",
             )
     return JSONResponse(content={"detail": "NotFound"}, status_code=404)

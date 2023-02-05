@@ -1,5 +1,6 @@
 import decimal
 
+from typing import Any
 from asyncpg import PostgresError
 from settings.settings import engine
 from sqlalchemy import text
@@ -17,7 +18,7 @@ from .models import (
 
 class CrudMenu:
     @staticmethod
-    async def get_menu_db(menu_id: int | None = None) -> str | list | dict | None:
+    async def get_menu_db(menu_id: int | None = None) -> Any | None | None:
         """Метод возвращающий весь список меню, либо определенную запись меню по id"""
         query_str = """
             select id, title, description, coalesce(sc, 0) as sub_menu_count, coalesce(dc, 0)
