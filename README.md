@@ -19,3 +19,7 @@
 > Иначе вернется просто статус задачи  
 ###### Загрузка готового файла:  
 > [GET] localhost:8000/api/v1/download/task_id  
+  
+###### Скриншоты:
+![Пройденные постман тесты](https://github.com/georg220022/restaurant_menu_api/blob/main/img/postman.png)
+![Пройденные PyTest](https://github.com/georg220022/restaurant_menu_api/blob/main/img/pytest.png)
