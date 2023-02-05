@@ -3,7 +3,7 @@ import asyncio
 import pytest
 from httpx import AsyncClient
 
-from app.api.v1.apps import app as app_fastapi
+from api.v1.apps import app as app_fastapi
 
 clients = AsyncClient(app=app_fastapi)
 

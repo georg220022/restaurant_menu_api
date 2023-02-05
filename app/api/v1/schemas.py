@@ -1,5 +1,35 @@
 from pydantic import BaseModel
 
+
+"""СХЕМЫ СВЯЗАННЫЕ С ЗАДАЧАМИ"""
+
+
+class ResponseLoadTestData(BaseModel):
+    """Cхема ответа загрузки тестовых данных"""
+
+    detail: str
+
+
+class ResponseGetStatusTask(BaseModel):
+    """Схема ответа проверки статуса задачи"""
+
+    detail: str
+
+
+class ResponseGetStatusTaskSucces(BaseModel):
+    """Схема ответа проверкм статуса задачи, если задача
+    завершена успешно. Добавляется в ответ ссылка на скачивание"""
+
+    detail: str
+    download_link: str
+
+
+class ResponseCreateXlsxMenu(BaseModel):
+    """ "Схема ответа генерации .xlsx меню"""
+
+    detail: str
+
+
 """СХЕМЫ ОШИБОК / 404"""  # Схемы ошибок составлены на будущее
 
 
