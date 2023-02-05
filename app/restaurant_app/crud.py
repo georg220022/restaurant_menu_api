@@ -104,7 +104,9 @@ class CrudMenu:
 
 class CrudSubMenu:
     @staticmethod
-    async def get_sub_menu_db(menu_id, sub_menu_id=None):
+    async def get_sub_menu_db(
+        menu_id, sub_menu_id=None
+    ) -> str | list[dict] | None | None:
         """Метод получения списка подменю либо определенного меню по id"""
         query_str = f"""
             select id, title, description, coalesce(dc, 0) as dishes_count
