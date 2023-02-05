@@ -20,6 +20,16 @@
 ###### Загрузка готового файла:  
 > [GET] localhost:8000/api/v1/download/task_id  
   
-###### Скриншоты:
+#### Скриншоты:  
+  
+##### Postman тесты:  
 ![Пройденные постман тесты](https://github.com/georg220022/restaurant_menu_api/blob/main/img/postman.png)
+##### PyTest:
 ![Пройденные PyTest](https://github.com/georg220022/restaurant_menu_api/blob/main/img/pytest.png)
+##### Выгруженный .xlsx файл
+![Файл .xlsx](https://github.com/georg220022/restaurant_menu_api/blob/main/img/Xlsx_%D1%84%D0%B0%D0%B9%D0%BB.png)  
+  
+#### Комментарии:  
+Некоторые правила mypy, flake8, isort проигнорированы так как:  
+1) Ругается на одинаковый функционал схем предназначенных под разные запросы  
+2) Пытается поправить импорты в pytest, но импорты нельзя менять местами, так как зависит порядом запуска тестов  
