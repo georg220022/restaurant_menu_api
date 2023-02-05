@@ -5,21 +5,21 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-sys.path = ['', '..'] + sys.path[1:]
+sys.path = ["", ".."] + sys.path[1:]
 
-from dotenv import load_dotenv # noqa: E402
+from dotenv import load_dotenv  # noqa: E402
 
 load_dotenv()
 
 
-DB_PASS = os.getenv('POSTGRES_PASSWORD')
-DB_USER = os.getenv('POSTGRES_USER')
-DB_NAME = os.getenv('POSTGRES_DB')
-URL_DB = os.getenv('URL_DB')
+DB_PASS = os.getenv("POSTGRES_PASSWORD")
+DB_USER = os.getenv("POSTGRES_USER")
+DB_NAME = os.getenv("POSTGRES_DB")
+URL_DB = os.getenv("URL_DB")
 
-POSTGRE_URL = f'postgresql+psycopg2://{DB_USER}:{DB_PASS}@{URL_DB}:5432/{DB_NAME}'
+POSTGRE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{URL_DB}:5432/{DB_NAME}"
 
-from settings.base import Base # noqa: E402
+from settings.base import Base  # noqa: E402
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -54,12 +54,12 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option('sqlalchemy.url')
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={'paramstyle': 'named'},
+        dialect_opts={"paramstyle": "named"},
     )
 
     with context.begin_transaction():
@@ -74,17 +74,15 @@ def run_migrations_online() -> None:
 
     """
     conf = config.get_section(config.config_ini_section)
-    conf['sqlalchemy.url'] = POSTGRE_URL
+    conf["sqlalchemy.url"] = POSTGRE_URL
     connectable = engine_from_config(
         conf,
-        prefix='sqlalchemy.',
+        prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

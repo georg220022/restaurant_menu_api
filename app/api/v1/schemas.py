@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel
 
 """СХЕМЫ ОШИБОК / 404"""  # Схемы ошибок составлены на будущее
@@ -7,27 +5,30 @@ from pydantic import BaseModel
 
 class NotFoundMenu(BaseModel):
     """Схема ошибки меню"""
+
     detail: str
 
 
 class NotFoundSubMenu(NotFoundMenu):
     """Схема ошибки подменю"""
+
     pass
 
 
 class NotFoundDish(NotFoundMenu):
     """Схема ошибки блюда"""
+
     pass
 
 
 class ErrorSchema(BaseModel):
     """Схема ошибки"""
 
-    detail: Optional[str | list]
+    detail: str | list | None
 
     class Config:
         schema_extra = {
-            'detail': 'Error message',
+            "detail": "Error message",
         }
 
 
@@ -152,6 +153,7 @@ class BaseRestaurantDishSchema(BaseModel):
 
 class RequestPostRestaurantDishSchema(BaseRestaurantDishSchema):
     """Схема POST запроса блюда"""
+
     price: float
 
 
@@ -178,6 +180,7 @@ class ResponsePatchRestaurantDishSchema(BaseRestaurantDishSchema):
 
 class GetRestaurantDishSchema(BaseRestaurantDishSchema):
     """Схема ответа к GET запросу блюда"""
+
     price: str
     id: str
 
