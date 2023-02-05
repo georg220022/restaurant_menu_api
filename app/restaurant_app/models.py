@@ -9,7 +9,7 @@ class RestaurantMenu(Base):
     __tablename__ = "RestaurantMenu"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
-    description = Column(String(2048), nullable=False)
+    description = Column(String(2048))
     sub_menu = relationship("RestaurantSubMenu", back_populates="menu")
 
 
