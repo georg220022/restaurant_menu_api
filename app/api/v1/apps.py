@@ -52,6 +52,7 @@ BASE_URL = "http://localhost:8000/api/v1"
 @app.get(
     "/api/v1/menus",
     response_model=Optional[list[GetRestaurantMenuSchema] | list],
+    tags=["Меню"],
 )
 async def get_list_menu(asyn_cache: RedisConn = Depends(get_cache)):
     """Получить список основного меню"""
@@ -64,6 +65,7 @@ async def get_list_menu(asyn_cache: RedisConn = Depends(get_cache)):
 @app.get(
     "/api/v1/menus/{menu_id}",
     responses={200: {"model": GetRestaurantMenuSchema}, 404: {"model": NotFoundMenu}},
+    tags=["Меню"],
 )
 async def get_menu(menu_id: int, asyn_cache: RedisConn = Depends(get_cache)):
     """Получить определенное основное меню"""
@@ -79,6 +81,7 @@ async def get_menu(menu_id: int, asyn_cache: RedisConn = Depends(get_cache)):
     "/api/v1/menus",
     status_code=201,
     response_model=Optional[ResponsePostRestaurantMenuSchema | ErrorSchema],
+    tags=["Меню"],
 )
 async def post_menu(
     request_data: RequestPostRestaurantMenuSchema,
@@ -91,7 +94,11 @@ async def post_menu(
     return response_data
 
 
-@app.patch("/api/v1/menus/{menu_id}", response_model=ResponsePathRestaurantMenuSchema)
+@app.patch(
+    "/api/v1/menus/{menu_id}",
+    response_model=ResponsePathRestaurantMenuSchema,
+    tags=["Меню"],
+)
 async def patch_menu(
     menu_id: int,
     request_data: RequestPathRestaurantMenuSchema | ErrorSchema | None,
@@ -105,7 +112,11 @@ async def patch_menu(
     return await CrudMenu.edit_menu_db(menu_id, request_data, asyn_db)
 
 
-@app.delete("/api/v1/menus/{menu_id}", response_model=DeleteResturantMenuSchema)
+@app.delete(
+    "/api/v1/menus/{menu_id}",
+    response_model=DeleteResturantMenuSchema,
+    tags=["Меню"],
+)
 async def delete_menu(
     menu_id: int,
     asyn_db: Session = Depends(get_db),
@@ -122,6 +133,7 @@ async def delete_menu(
 @app.get(
     "/api/v1/menus/{menu_id}/submenus",
     response_model=Optional[list[GetRestaurantSubMenuSchema] | Any],
+    tags=["Подменю"],
 )
 async def get_list_submenu(menu_id: int, asyn_cache: RedisConn = Depends(get_cache)):
     """Получить список подменю"""
@@ -137,6 +149,7 @@ async def get_list_submenu(menu_id: int, asyn_cache: RedisConn = Depends(get_cac
     "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}",
     response_model=GetRestaurantSubMenuSchema,
     responses={404: {"model": NotFoundSubMenu}},
+    tags=["Подменю"],
 )
 async def get_submenu(
     menu_id: int, sub_menu_id: int, asyn_cache: RedisConn = Depends(get_cache)
@@ -156,6 +169,7 @@ async def get_submenu(
     "/api/v1/menus/{menu_id}/submenus",
     status_code=201,
     response_model=ResponsePostRestaurantSubMenu,
+    tags=["Подменю"],
 )
 async def post_sub_menu(
     menu_id: int,
@@ -172,6 +186,7 @@ async def post_sub_menu(
 @app.patch(
     "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}",
     response_model=Optional[ResponsePatchRestaurantSubMenuSchema | ErrorSchema],
+    tags=["Подменю"],
 )
 async def patch_sub_menu(
     menu_id: int,
@@ -193,6 +208,7 @@ async def patch_sub_menu(
 @app.delete(
     "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}",
     response_model=DeleteRestaurantSubMenuSchema,
+    tags=["Подменю"],
 )
 async def delete_sub_menu(
     menu_id: int,
@@ -212,6 +228,7 @@ async def delete_sub_menu(
 @app.get(
     "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes",
     response_model=list[GetRestaurantDishSchema],
+    tags=["Блюда"],
 )
 async def get_list_dish(
     menu_id: int,
@@ -230,6 +247,7 @@ async def get_list_dish(
     "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes/{dish_id}",
     response_model=GetRestaurantDishSchema,
     responses={404: {"model": NotFoundDish}},
+    tags=["Блюда"],
 )
 async def get_dish(
     menu_id: int,
@@ -253,6 +271,7 @@ async def get_dish(
     "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes",
     status_code=201,
     response_model=ResponsePostRestaurantDishSchema,
+    tags=["Блюда"],
 )
 async def post_dish(
     menu_id: int,
@@ -272,6 +291,7 @@ async def post_dish(
 @app.patch(
     "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes/{dish_id}",
     response_model=Optional[ResponsePatchRestaurantDishSchema | ErrorSchema],
+    tags=["Блюда"],
 )
 async def patch_dish(
     menu_id: int,
@@ -294,6 +314,7 @@ async def patch_dish(
 @app.delete(
     "/api/v1/menus/{menu_id}/submenus/{sub_menu_id}/dishes/{dish_id}",
     response_model=DeleteRestaurantDishSchema,
+    tags=["Блюда"],
 )
 async def delete_dish(
     menu_id: int,
@@ -316,6 +337,7 @@ async def delete_dish(
 @app.get(
     "/api/v1/load_data",
     responses={200: {"model": ResponseLoadTestData}, 500: {"model": ErrorSchema}},
+    tags=["Получение .xlsx файла"],
 )
 async def load_data_to_db(asyn_db: Session = Depends(get_db)):
     """Загрузка тестовых данных"""
@@ -331,6 +353,7 @@ async def load_data_to_db(asyn_db: Session = Depends(get_db)):
     "/api/v1/create_xlsx",
     responses={202: {"model": ResponseCreateXlsxMenu}},
     status_code=202,
+    tags=["Получение .xlsx файла"],
 )
 async def create_full_menu_to_xlsx(asyn_cache: RedisConn = Depends(get_cache)):
     """Запуск задания создания .xlsx"""
@@ -350,6 +373,7 @@ async def create_full_menu_to_xlsx(asyn_cache: RedisConn = Depends(get_cache)):
         200: {"model": ResponseGetStatusTaskSucces},
     },
     status_code=200,
+    tags=["Получение .xlsx файла"],
 )
 async def get_status_task(task_id: str):
     """Проверка статуса задачи"""
@@ -361,7 +385,11 @@ async def get_status_task(task_id: str):
     return JSONResponse(content=info_data, status_code=200)
 
 
-@app.get("/api/v1/download/{task_id}", status_code=200)
+@app.get(
+    "/api/v1/download/{task_id}",
+    status_code=200,
+    tags=["Получение .xlsx файла"],
+)
 async def download(task_id: str, asyn_cache: RedisConn = Depends(get_cache)):
     """Загрузка .xlsx меню"""
     name_file = await asyn_cache.get(str(task_id))
