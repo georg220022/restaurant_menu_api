@@ -12,6 +12,8 @@ UPDATED_DATA = {
 
 
 class TestGroupDish:
+    """Класс тестирования блюд"""
+
     def setup_class(self):
         self.url = None
         self.url_with_id = None

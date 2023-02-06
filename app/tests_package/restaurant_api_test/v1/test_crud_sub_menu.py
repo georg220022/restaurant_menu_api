@@ -11,6 +11,8 @@ UPDATED_DATA = {
 
 
 class TestGroupSubMenu:
+    """Класс тестирования подменю"""
+
     def setup_class(self):
         self.url = None
         self.url_with_id = None

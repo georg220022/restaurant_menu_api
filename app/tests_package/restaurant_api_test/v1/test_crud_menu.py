@@ -8,6 +8,8 @@ UPDATED_DATA = {
 
 
 class TestGroupMenu:
+    """Класс тестирования основного меню"""
+
     def setup_class(self):
         self.url = "http://test/api/v1/menus"
         self.url_with_id = None

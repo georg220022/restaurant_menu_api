@@ -4,9 +4,10 @@ import os
 import xlsxwriter
 from celery import Celery
 from dotenv import load_dotenv
-from restaurant_app.models import RestaurantDish, RestaurantMenu, RestaurantSubMenu
 from settings.settings import db_async_session
 from sqlalchemy import func, select
+
+from restaurant_app.models import RestaurantDish, RestaurantMenu, RestaurantSubMenu
 
 load_dotenv()
 
@@ -23,6 +24,7 @@ app_celery.autodiscover_tasks()
 
 
 async def get_full_menu_from_db():
+    """Функция получения всего меню в json из БД"""
     rm = RestaurantMenu
     rsm = RestaurantSubMenu
     rd = RestaurantDish
@@ -66,6 +68,7 @@ async def get_full_menu_from_db():
 
 
 async def create_xlsx(unique_name):
+    """Функция генерации .xlsx файла"""
     data = await get_full_menu_from_db()
     workbook = xlsxwriter.Workbook(f"storage/{unique_name}.xlsx")
     worksheet = workbook.add_worksheet()
@@ -111,4 +114,5 @@ async def create_xlsx(unique_name):
 
 @app_celery.task
 def start_create_xlsx(unique_name):
+    """Функция запуска асинхронной задачи"""
     asyncio.run(create_xlsx(unique_name))

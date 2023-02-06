@@ -1,6 +1,6 @@
 import decimal
-
 from typing import Any
+
 from asyncpg import PostgresError
 from settings.settings import engine
 from sqlalchemy import text

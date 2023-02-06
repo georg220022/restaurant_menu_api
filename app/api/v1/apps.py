@@ -356,6 +356,7 @@ async def get_status_task(task_id: str):
     status_task = app_celery.AsyncResult(task_id).status
     info_data = {"status task": status_task}
     if status_task == "SUCCESS":
+        #  Если задача выполнена, добавляем ссылку для скачивания в ответ
         info_data.update({"Download link": f"{BASE_URL}/download/{task_id}"})
     return JSONResponse(content=info_data, status_code=200)
 
@@ -366,6 +367,7 @@ async def download(task_id: str, asyn_cache: RedisConn = Depends(get_cache)):
     name_file = await asyn_cache.get(str(task_id))
     if name_file:
         path_file = f"storage/{name_file}.xlsx"
+        #  Проверка существования файла
         if os.path.exists(path_file):
             return FileResponse(
                 path=path_file,

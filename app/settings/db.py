@@ -4,6 +4,7 @@ from .settings import cache_redis, db_async_session
 
 
 async def get_db() -> AsyncGenerator:
+    """Функция получения сессии Postgres"""
     asyn_db = db_async_session()
     try:
         yield asyn_db
@@ -12,6 +13,7 @@ async def get_db() -> AsyncGenerator:
 
 
 async def get_cache():
+    """Функция получения сессии Redis[кеш]"""
     try:
         yield cache_redis
     finally:

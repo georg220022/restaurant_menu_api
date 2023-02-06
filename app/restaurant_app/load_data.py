@@ -1,6 +1,7 @@
 from asyncpg import PostgresError
-from .models import dish, menus, sub_menus
 from sqlalchemy.exc import IntegrityError
+
+from .models import dish, menus, sub_menus
 
 DATA_MENU = [
     dict(title="Горчяие блюда", description="Любые горячие блюда"),
