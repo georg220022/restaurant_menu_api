@@ -26,21 +26,35 @@ async def get_full_menu_from_db():
     rm = RestaurantMenu
     rsm = RestaurantSubMenu
     rd = RestaurantDish
-    query_dish = func.json_build_object(
-        "title", rd.title, "description", rd.description, "price", rd.price
-    )
     dish_m = (
-        select(func.json_agg(query_dish))
+        (
+            select(
+                func.json_agg(
+                    func.json_build_object(
+                        "title",
+                        rd.title,
+                        "description",
+                        rd.description,
+                        "price",
+                        rd.price,
+                    )
+                )
+            )
+        )
         .where(rsm.id == rd.sub_menu_id)
         .scalar_subquery()
     )
-    sub_m = select(
-        func.json_agg(
-            func.json_build_object(
-                "title", rsm.title, "description", rsm.description, "dishes", dish_m
+    sub_m = (
+        select(
+            func.json_agg(
+                func.json_build_object(
+                    "title", rsm.title, "description", rsm.description, "dishes", dish_m
+                )
             )
         )
-    ).scalar_subquery()
+        .where(rm.id == rsm.menu_id)
+        .scalar_subquery()
+    )
     stmt = select(
         func.json_agg(
             func.json_build_object(
