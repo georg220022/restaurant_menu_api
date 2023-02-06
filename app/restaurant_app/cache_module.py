@@ -84,7 +84,7 @@ class CacheSubMenu:
         response_data: dict,
         menu_id: int,
         sub_menu_id: int | None | None = None,
-    ) -> dict | str | None:
+    ) -> dict:
         """Метод сохранения ответа из БД в кеш для подменю"""
         if response_data == "NotFound":
             # Что бы не кешировать постоянно NotFound на любой новый
@@ -197,7 +197,7 @@ class CacheDish:
     @staticmethod
     async def clear_cache(
         asyn_cache, menu_id: int, sub_menu_id: int, dish_id: int | None | None = None
-    ) -> None | str | None:
+    ) -> None:
         """
         Метод очистки кеша, если изменилось/удалилось/добавилось блюдо.
         При вызове этого метода так же очищается некоторый
@@ -214,3 +214,4 @@ class CacheDish:
         if dish_id:
             delete_keys += (f"menu_{menu_id}_sub_menus_{sub_menu_id}_dish_{dish_id}",)
         await asyn_cache.delete(*delete_keys)
+        return None

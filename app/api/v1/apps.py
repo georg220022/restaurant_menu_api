@@ -53,9 +53,7 @@ BASE_URL = "http://localhost:8000/api/v1"
     "/api/v1/menus",
     response_model=Optional[list[GetRestaurantMenuSchema] | list],
 )
-async def get_list_menu(
-    asyn_cache: RedisConn = Depends(get_cache)
-):
+async def get_list_menu(asyn_cache: RedisConn = Depends(get_cache)):
     """Получить список основного меню"""
     if await CacheMenu.check_cache(asyn_cache):
         return await CacheMenu.get_menu(asyn_cache)
@@ -67,10 +65,7 @@ async def get_list_menu(
     "/api/v1/menus/{menu_id}",
     responses={200: {"model": GetRestaurantMenuSchema}, 404: {"model": NotFoundMenu}},
 )
-async def get_menu(
-    menu_id: int,
-    asyn_cache: RedisConn = Depends(get_cache)
-):
+async def get_menu(menu_id: int, asyn_cache: RedisConn = Depends(get_cache)):
     """Получить определенное основное меню"""
     if await CacheMenu.check_cache(asyn_cache, menu_id):
         return await CacheMenu.get_menu(asyn_cache, menu_id)
@@ -96,10 +91,7 @@ async def post_menu(
     return response_data
 
 
-@app.patch(
-    "/api/v1/menus/{menu_id}",
-    response_model=ResponsePathRestaurantMenuSchema
-)
+@app.patch("/api/v1/menus/{menu_id}", response_model=ResponsePathRestaurantMenuSchema)
 async def patch_menu(
     menu_id: int,
     request_data: RequestPathRestaurantMenuSchema | ErrorSchema | None,
@@ -113,10 +105,7 @@ async def patch_menu(
     return await CrudMenu.edit_menu_db(menu_id, request_data, asyn_db)
 
 
-@app.delete(
-    "/api/v1/menus/{menu_id}",
-    response_model=DeleteResturantMenuSchema
-)
+@app.delete("/api/v1/menus/{menu_id}", response_model=DeleteResturantMenuSchema)
 async def delete_menu(
     menu_id: int,
     asyn_db: Session = Depends(get_db),
@@ -134,10 +123,7 @@ async def delete_menu(
     "/api/v1/menus/{menu_id}/submenus",
     response_model=Optional[list[GetRestaurantSubMenuSchema] | Any],
 )
-async def get_list_submenu(
-    menu_id: int,
-    asyn_cache: RedisConn = Depends(get_cache)
-):
+async def get_list_submenu(menu_id: int, asyn_cache: RedisConn = Depends(get_cache)):
     """Получить список подменю"""
     if await CacheSubMenu.check_cache(asyn_cache, menu_id):
         return await CacheSubMenu.get_sub_menu(asyn_cache, menu_id)
@@ -153,9 +139,7 @@ async def get_list_submenu(
     responses={404: {"model": NotFoundSubMenu}},
 )
 async def get_submenu(
-    menu_id: int,
-    sub_menu_id: int,
-    asyn_cache: RedisConn = Depends(get_cache)
+    menu_id: int, sub_menu_id: int, asyn_cache: RedisConn = Depends(get_cache)
 ):
     """Получить определенное подменю"""
     if await CacheSubMenu.check_cache(asyn_cache, menu_id, sub_menu_id):
@@ -333,9 +317,7 @@ async def delete_dish(
     "/api/v1/load_data",
     responses={200: {"model": ResponseLoadTestData}, 500: {"model": ErrorSchema}},
 )
-async def load_data_to_db(
-    asyn_db: Session = Depends(get_db)
-):
+async def load_data_to_db(asyn_db: Session = Depends(get_db)):
     """Загрузка тестовых данных"""
     bool_load = await LoadData.to_db(asyn_db)
     if bool_load:
@@ -350,9 +332,7 @@ async def load_data_to_db(
     responses={202: {"model": ResponseCreateXlsxMenu}},
     status_code=202,
 )
-async def create_full_menu_to_xlsx(
-    asyn_cache: RedisConn = Depends(get_cache)
-):
+async def create_full_menu_to_xlsx(asyn_cache: RedisConn = Depends(get_cache)):
     """Запуск задания создания .xlsx"""
     unique_name_file = str(uuid4())
     task_id = str(start_create_xlsx.delay(unique_name_file))
@@ -371,9 +351,7 @@ async def create_full_menu_to_xlsx(
     },
     status_code=200,
 )
-async def get_status_task(
-    task_id: str
-):
+async def get_status_task(task_id: str):
     """Проверка статуса задачи"""
     status_task = app_celery.AsyncResult(task_id).status
     info_data = {"status task": status_task}
@@ -382,14 +360,8 @@ async def get_status_task(
     return JSONResponse(content=info_data, status_code=200)
 
 
-@app.get(
-    "/api/v1/download/{task_id}",
-    status_code=200
-)
-async def download(
-    task_id: str,
-    asyn_cache: RedisConn = Depends(get_cache)
-):
+@app.get("/api/v1/download/{task_id}", status_code=200)
+async def download(task_id: str, asyn_cache: RedisConn = Depends(get_cache)):
     """Загрузка .xlsx меню"""
     name_file = await asyn_cache.get(str(task_id))
     if name_file:

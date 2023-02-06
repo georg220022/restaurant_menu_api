@@ -12,7 +12,7 @@ services:
       - app/.env
     expose:
       - 6379
- 
+
   postgres_db_test:
     container_name: postgres_db_test
     image: postgres:15.1-alpine
@@ -51,7 +51,7 @@ services:
 
     ports:
       - 8000:8000
-  
+
 networks:
   test_network:
     name: test_network

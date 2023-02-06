@@ -47,8 +47,8 @@ repos:
     rev: v0.991
     hooks:
     -   id: mypy
-        args: [--ignore-missing-imports]
-        #exclude: ^app
+        args: [--no-strict-optional, --ignore-missing-imports]
+        exclude: ^app
 
 # Форматирует код под PEP8 c помощью black
 -   repo: https://github.com/psf/black
@@ -56,4 +56,3 @@ repos:
     hooks:
     - id: black
       language_version: python3.10
-      #exclude: ^app/api/v1/

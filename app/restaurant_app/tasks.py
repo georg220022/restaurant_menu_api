@@ -82,26 +82,30 @@ async def create_xlsx(unique_name):
                 worksheet.write(row, 0, num_menu)
                 worksheet.write(row, 1, menu_title)
                 worksheet.write(row, 2, menu_description)
-                for sub_menu in enumerate(menu[1]["submenus"], 1):
-                    if sub_menu[0]:
-                        row += 1
-                        num_submenu = sub_menu[0]
-                        submenu_title = sub_menu[1]["title"]
-                        submenu_description = sub_menu[1]["description"]
-                        worksheet.write(row, 1, num_submenu)
-                        worksheet.write(row, 2, submenu_title)
-                        worksheet.write(row, 3, submenu_description)
-                        for dish in enumerate(sub_menu[1]["dishes"], 1):
-                            if dish[0]:
-                                row += 1
-                                num_dish = dish[0]
-                                dish_title = dish[1]["title"]
-                                dish_description = dish[1]["description"]
-                                dish_price = dish[1]["price"]
-                                worksheet.write(row, 2, num_dish)
-                                worksheet.write(row, 3, dish_title)
-                                worksheet.write(row, 4, dish_description)
-                                worksheet.write(row, 5, f"{round(dish_price, 2):.2f}")
+                if menu[1]["submenus"]:
+                    for sub_menu in enumerate(menu[1]["submenus"], 1):
+                        if sub_menu[0]:
+                            row += 1
+                            num_submenu = sub_menu[0]
+                            submenu_title = sub_menu[1]["title"]
+                            submenu_description = sub_menu[1]["description"]
+                            worksheet.write(row, 1, num_submenu)
+                            worksheet.write(row, 2, submenu_title)
+                            worksheet.write(row, 3, submenu_description)
+                            if sub_menu[1]["dishes"]:
+                                for dish in enumerate(sub_menu[1]["dishes"], 1):
+                                    if dish[0]:
+                                        row += 1
+                                        num_dish = dish[0]
+                                        dish_title = dish[1]["title"]
+                                        dish_description = dish[1]["description"]
+                                        dish_price = dish[1]["price"]
+                                        worksheet.write(row, 2, num_dish)
+                                        worksheet.write(row, 3, dish_title)
+                                        worksheet.write(row, 4, dish_description)
+                                        worksheet.write(
+                                            row, 5, f"{round(dish_price, 2):.2f}"
+                                        )
     workbook.close()
 
 
