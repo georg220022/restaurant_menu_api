@@ -17,7 +17,7 @@ repos:
     rev: 5.12.0
     hooks:
       - id: isort
-        exclude: __init__.py
+        exclude: ^run_tests
         types: [python3]
         args: [ --profile, black, --filter-files ]
 
@@ -39,7 +39,7 @@ repos:
     rev: 6.0.0
     hooks:
     -   id: flake8
-        exclude: ^run_tests
+        #exclude: ^run_tests
         args: [ "--ignore=F821", "--max-line-length=120" ]
 
 # Проверка статических типов с помощью mypy
@@ -48,7 +48,7 @@ repos:
     hooks:
     -   id: mypy
         args: [--ignore-missing-imports]
-        exclude: ^app
+        #exclude: ^app
 
 # Форматирует код под PEP8 c помощью black
 -   repo: https://github.com/psf/black
@@ -56,4 +56,4 @@ repos:
     hooks:
     - id: black
       language_version: python3.10
-      exclude: ^app/api/v1/
+      #exclude: ^app/api/v1/
