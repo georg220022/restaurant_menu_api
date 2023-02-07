@@ -1,16 +1,13 @@
-import os
 from typing import Any, Optional
-from uuid import uuid4
 
-from fastapi import APIRouter, Depends, FastAPI
-from fastapi.responses import FileResponse, JSONResponse
-from redis.asyncio import Connection as RedisConn
-from restaurant_app.cache_module import CacheDish, CacheMenu, CacheSubMenu
-from restaurant_app.crud import CrudDish, CrudMenu, CrudSubMenu
-from restaurant_app.load_data import LoadData
-from restaurant_app.tasks import app_celery, start_create_xlsx
-from settings.db import get_cache, get_db
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, FastAPI
+from restaurant_app.service import (
+    DishService,
+    LoadData,
+    MenuService,
+    SubMenuService,
+    TaskXLSX,
+)
 
 from .schemas import (
     DeleteRestaurantDishSchema,
@@ -44,7 +41,6 @@ from .schemas import (
 app = FastAPI()
 router = APIRouter()
 
-BASE_URL = "http://localhost:8000/api/v1"
 
 """ОСНОВНОЕ МЕНЮ"""
 
@@ -54,12 +50,9 @@ BASE_URL = "http://localhost:8000/api/v1"
     response_model=Optional[list[GetRestaurantMenuSchema] | list],
     tags=["Меню"],
 )
-async def get_list_menu(asyn_cache: RedisConn = Depends(get_cache)):
+async def get_list_menu():
     """Получить список основного меню"""
-    if await CacheMenu.check_cache(asyn_cache):
-        return await CacheMenu.get_menu(asyn_cache)
-    response_data = await CrudMenu.get_menu_db()
-    return await CacheMenu.set_menu(asyn_cache, response_data)
+    return await MenuService.list_menu()
 
 
 @app.get(
@@ -67,14 +60,9 @@ async def get_list_menu(asyn_cache: RedisConn = Depends(get_cache)):
     responses={200: {"model": GetRestaurantMenuSchema}, 404: {"model": NotFoundMenu}},
     tags=["Меню"],
 )
-async def get_menu(menu_id: int, asyn_cache: RedisConn = Depends(get_cache)):
+async def get_menu(menu_id: int):
     """Получить определенное основное меню"""
-    if await CacheMenu.check_cache(asyn_cache, menu_id):
-        return await CacheMenu.get_menu(asyn_cache, menu_id)
-    response_data = await CrudMenu.get_menu_db(menu_id)
-    if response_data == "NotFound":
-        return JSONResponse(content={"detail": "menu not found"}, status_code=404)
-    return await CacheMenu.set_menu(asyn_cache, response_data, menu_id)
+    return await MenuService.get_menu_id(menu_id)
 
 
 @app.post(
@@ -85,13 +73,9 @@ async def get_menu(menu_id: int, asyn_cache: RedisConn = Depends(get_cache)):
 )
 async def post_menu(
     request_data: RequestPostRestaurantMenuSchema,
-    asyn_db: Session = Depends(get_db),
-    asyn_cache: RedisConn = Depends(get_cache),
 ):
     """Создать основное меню"""
-    response_data = await CrudMenu.create_menu_db(request_data, asyn_db)
-    await CacheMenu.clear_cache(asyn_cache)
-    return response_data
+    return await MenuService.create_menu(request_data)
 
 
 @app.patch(
@@ -102,14 +86,9 @@ async def post_menu(
 async def patch_menu(
     menu_id: int,
     request_data: RequestPathRestaurantMenuSchema | ErrorSchema | None,
-    asyn_db: Session = Depends(get_db),
-    asyn_cache: RedisConn = Depends(get_cache),
 ):
     """Изменить основное меню"""
-    response_data = await CacheMenu.clear_cache(asyn_cache, menu_id)
-    if response_data == "NotFound":
-        return JSONResponse(content={"detail": "menu not found"}, status_code=404)
-    return await CrudMenu.edit_menu_db(menu_id, request_data, asyn_db)
+    return await MenuService.edit_menu(menu_id, request_data)
 
 
 @app.delete(
@@ -119,12 +98,9 @@ async def patch_menu(
 )
 async def delete_menu(
     menu_id: int,
-    asyn_db: Session = Depends(get_db),
-    asyn_cache: RedisConn = Depends(get_cache),
 ):
     """Удалить основное меню"""
-    await CacheMenu.clear_cache(asyn_cache, menu_id)
-    return await CrudMenu.delete_menu_db(menu_id, asyn_db)
+    return await MenuService.delete_menu(menu_id)
 
 
 """ПОДМЕНЮ"""
@@ -135,14 +111,9 @@ async def delete_menu(
     response_model=Optional[list[GetRestaurantSubMenuSchema] | Any],
     tags=["Подменю"],
 )
-async def get_list_submenu(menu_id: int, asyn_cache: RedisConn = Depends(get_cache)):
+async def get_list_submenu(menu_id: int):
     """Получить список подменю"""
-    if await CacheSubMenu.check_cache(asyn_cache, menu_id):
-        return await CacheSubMenu.get_sub_menu(asyn_cache, menu_id)
-    response_data = await CrudSubMenu.get_sub_menu_db(menu_id)
-    if response_data == []:
-        return response_data
-    return await CacheSubMenu.set_sub_menu(asyn_cache, response_data, menu_id)
+    return await SubMenuService.list_submenu(menu_id)
 
 
 @app.get(
@@ -151,18 +122,9 @@ async def get_list_submenu(menu_id: int, asyn_cache: RedisConn = Depends(get_cac
     responses={404: {"model": NotFoundSubMenu}},
     tags=["Подменю"],
 )
-async def get_submenu(
-    menu_id: int, sub_menu_id: int, asyn_cache: RedisConn = Depends(get_cache)
-):
+async def get_submenu(menu_id: int, sub_menu_id: int):
     """Получить определенное подменю"""
-    if await CacheSubMenu.check_cache(asyn_cache, menu_id, sub_menu_id):
-        return await CacheSubMenu.get_sub_menu(asyn_cache, menu_id, sub_menu_id)
-    response_data = await CrudSubMenu.get_sub_menu_db(menu_id, sub_menu_id)
-    if response_data == "NotFound":
-        return JSONResponse(content={"detail": "submenu not found"}, status_code=404)
-    return await CacheSubMenu.set_sub_menu(
-        asyn_cache, response_data, menu_id, sub_menu_id
-    )
+    return await SubMenuService.get_submenu_id(menu_id, sub_menu_id)
 
 
 @app.post(
@@ -171,16 +133,9 @@ async def get_submenu(
     response_model=ResponsePostRestaurantSubMenu,
     tags=["Подменю"],
 )
-async def post_sub_menu(
-    menu_id: int,
-    request_data: RequestPostRestaurantSubMenuSchema,
-    asyn_db: Session = Depends(get_db),
-    asyn_cache: RedisConn = Depends(get_cache),
-):
+async def post_sub_menu(menu_id: int, request_data: RequestPostRestaurantSubMenuSchema):
     """Создать подменю"""
-    response_data = await CrudSubMenu.create_sub_menu_db(menu_id, request_data, asyn_db)
-    await CacheSubMenu.clear_cache(asyn_cache, menu_id)
-    return response_data
+    return await SubMenuService.create_submenu(menu_id, request_data)
 
 
 @app.patch(
@@ -189,20 +144,10 @@ async def post_sub_menu(
     tags=["Подменю"],
 )
 async def patch_sub_menu(
-    menu_id: int,
-    sub_menu_id: int,
-    request_data: RequestPatchRestaurantSubMenuSchema,
-    asyn_db: Session = Depends(get_db),
-    asyn_cache: RedisConn = Depends(get_cache),
+    menu_id: int, sub_menu_id: int, request_data: RequestPatchRestaurantSubMenuSchema
 ):
     """Изменить подменю"""
-    response_data = await CrudSubMenu.edit_sub_menu_db(
-        menu_id, sub_menu_id, request_data, asyn_db
-    )
-    if response_data == "NotFound":
-        return JSONResponse(content={"detail": "submenu not found"}, status_code=404)
-    await CacheSubMenu.clear_cache(asyn_cache, menu_id, sub_menu_id)
-    return response_data
+    return await SubMenuService.edit_submenu(menu_id, sub_menu_id, request_data)
 
 
 @app.delete(
@@ -210,16 +155,9 @@ async def patch_sub_menu(
     response_model=DeleteRestaurantSubMenuSchema,
     tags=["Подменю"],
 )
-async def delete_sub_menu(
-    menu_id: int,
-    sub_menu_id: int,
-    asyn_db: Session = Depends(get_db),
-    asyn_cache: RedisConn = Depends(get_cache),
-):
+async def delete_sub_menu(menu_id: int, sub_menu_id: int):
     """Удалить подменю"""
-    response_data = await CrudSubMenu.delete_sub_menu_db(menu_id, sub_menu_id, asyn_db)
-    await CacheSubMenu.clear_cache(asyn_cache, menu_id, sub_menu_id)
-    return response_data
+    return await SubMenuService.delete_submenu(menu_id, sub_menu_id)
 
 
 """БЛЮДА"""
@@ -230,17 +168,9 @@ async def delete_sub_menu(
     response_model=list[GetRestaurantDishSchema],
     tags=["Блюда"],
 )
-async def get_list_dish(
-    menu_id: int,
-    sub_menu_id: int,
-    asyn_db: Session = Depends(get_db),
-    asyn_cache: RedisConn = Depends(get_cache),
-):
+async def get_list_dish(menu_id: int, sub_menu_id: int):
     """Получить список блюд"""
-    if await CacheDish.check_cache(asyn_cache, menu_id, sub_menu_id):
-        return await CacheDish.get_dish(asyn_cache, menu_id, sub_menu_id)
-    response_data = await CrudDish.get_dish_db(menu_id, sub_menu_id, asyn_db)
-    return await CacheDish.set_dish(asyn_cache, response_data, menu_id, sub_menu_id)
+    return await DishService.list_dish(menu_id, sub_menu_id)
 
 
 @app.get(
@@ -253,18 +183,9 @@ async def get_dish(
     menu_id: int,
     sub_menu_id: int,
     dish_id: int,
-    asyn_db: Session = Depends(get_db),
-    asyn_cache: RedisConn = Depends(get_cache),
 ):
     """Получить определенное блюдо"""
-    if await CacheDish.check_cache(asyn_cache, menu_id, sub_menu_id, dish_id):
-        return await CacheDish.get_dish(asyn_cache, menu_id, sub_menu_id, dish_id)
-    response_data = await CrudDish.get_dish_db(menu_id, sub_menu_id, asyn_db, dish_id)
-    if response_data == "NotFound":
-        return JSONResponse(content={"detail": "dish not found"}, status_code=404)
-    return await CacheDish.set_dish(
-        asyn_cache, response_data, menu_id, sub_menu_id, dish_id
-    )
+    return await DishService.get_dish_id(menu_id, sub_menu_id, dish_id)
 
 
 @app.post(
@@ -277,15 +198,9 @@ async def post_dish(
     menu_id: int,
     sub_menu_id: int,
     request_data: RequestPostRestaurantDishSchema,
-    asyn_db: Session = Depends(get_db),
-    asyn_cache: RedisConn = Depends(get_cache),
 ):
     """Создать блюдо"""
-    response_data = await CrudDish.create_dish_db(
-        menu_id, sub_menu_id, request_data, asyn_db
-    )
-    await CacheDish.clear_cache(asyn_cache, menu_id, sub_menu_id)
-    return response_data
+    return await DishService.create_dish(menu_id, sub_menu_id, request_data)
 
 
 @app.patch(
@@ -298,17 +213,9 @@ async def patch_dish(
     sub_menu_id: int,
     dish_id: int,
     request_data: RequestPatchRestaurantDishSchema,
-    asyn_db: Session = Depends(get_db),
-    asyn_cache: RedisConn = Depends(get_cache),
 ):
     """Изменить блюдо"""
-    response_data = await CrudDish.edit_dish_db(
-        menu_id, sub_menu_id, dish_id, request_data, asyn_db
-    )
-    if response_data == "NotFound":
-        return JSONResponse(content={"detail": "dish not found"}, status_code=404)
-    await CacheDish.clear_cache(asyn_cache, menu_id, sub_menu_id, dish_id)
-    return response_data
+    return await DishService.edit_dish(menu_id, sub_menu_id, dish_id, request_data)
 
 
 @app.delete(
@@ -316,22 +223,12 @@ async def patch_dish(
     response_model=DeleteRestaurantDishSchema,
     tags=["Блюда"],
 )
-async def delete_dish(
-    menu_id: int,
-    sub_menu_id: int,
-    dish_id: int,
-    asyn_db: Session = Depends(get_db),
-    asyn_cache: RedisConn = Depends(get_cache),
-):
+async def delete_dish(menu_id: int, sub_menu_id: int, dish_id: int):
     """Удалить блюдо"""
-    response_data = await CrudDish.delete_dish_db(
-        menu_id, sub_menu_id, dish_id, asyn_db
-    )
-    await CacheDish.clear_cache(asyn_cache, menu_id, sub_menu_id, dish_id)
-    return response_data
+    return await DishService.delete_dish(menu_id, sub_menu_id, dish_id)
 
 
-"""ГЕНЕРАЦИЯ/ПОЛУЧЕНИЕ .XLSX МЕНЮ"""
+"""ЗАГРУЗКА ТЕСТОВЫХ ДАННЫХ"""
 
 
 @app.get(
@@ -339,14 +236,12 @@ async def delete_dish(
     responses={200: {"model": ResponseLoadTestData}, 500: {"model": ErrorSchema}},
     tags=["Получение .xlsx файла"],
 )
-async def load_data_to_db(asyn_db: Session = Depends(get_db)):
+async def load_data_to_db():
     """Загрузка тестовых данных"""
-    bool_load = await LoadData.to_db(asyn_db)
-    if bool_load:
-        return JSONResponse(content={"detail": "Данные загружены"}, status_code=200)
-    return JSONResponse(
-        content={"detail": "Ошибка при загрузке данных"}, status_code=500
-    )
+    return await LoadData.test_data_to_db()
+
+
+"""ГЕНЕРАЦИЯ/ПОЛУЧЕНИЕ .XLSX МЕНЮ"""
 
 
 @app.post(
@@ -355,15 +250,9 @@ async def load_data_to_db(asyn_db: Session = Depends(get_db)):
     status_code=202,
     tags=["Получение .xlsx файла"],
 )
-async def create_full_menu_to_xlsx(asyn_cache: RedisConn = Depends(get_cache)):
+async def create_full_menu_to_xlsx():
     """Запуск задания создания .xlsx"""
-    unique_name_file = str(uuid4())
-    task_id = str(start_create_xlsx.delay(unique_name_file))
-    await asyn_cache.set(task_id, unique_name_file)
-    info_data = {
-        "detail": f"Принято, GET запрос узнать статус задачи: '{BASE_URL}/status/{task_id}'"
-    }
-    return JSONResponse(content=info_data, status_code=202)
+    return await TaskXLSX.generate_xlsx_menu()
 
 
 @app.get(
@@ -377,12 +266,7 @@ async def create_full_menu_to_xlsx(asyn_cache: RedisConn = Depends(get_cache)):
 )
 async def get_status_task(task_id: str):
     """Проверка статуса задачи"""
-    status_task = app_celery.AsyncResult(task_id).status
-    info_data = {"status task": status_task}
-    if status_task == "SUCCESS":
-        #  Если задача выполнена, добавляем ссылку для скачивания в ответ
-        info_data.update({"Download link": f"{BASE_URL}/download/{task_id}"})
-    return JSONResponse(content=info_data, status_code=200)
+    return await TaskXLSX.status_task(task_id)
 
 
 @app.get(
@@ -390,16 +274,6 @@ async def get_status_task(task_id: str):
     status_code=200,
     tags=["Получение .xlsx файла"],
 )
-async def download(task_id: str, asyn_cache: RedisConn = Depends(get_cache)):
+async def download_xlsx_menu(task_id: str):
     """Загрузка .xlsx меню"""
-    name_file = await asyn_cache.get(str(task_id))
-    if name_file:
-        path_file = f"storage/{name_file}.xlsx"
-        #  Проверка существования файла
-        if os.path.exists(path_file):
-            return FileResponse(
-                path=path_file,
-                filename="FullMenu.xlsx",
-                media_type="multipart/form-data",
-            )
-    return JSONResponse(content={"detail": "NotFound"}, status_code=404)
+    return await TaskXLSX.download_menu(task_id)

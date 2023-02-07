@@ -1,4 +1,5 @@
 from asyncpg import PostgresError
+from settings.db import get_db
 from sqlalchemy.exc import IntegrityError
 
 from .models import dish, menus, sub_menus
@@ -35,11 +36,13 @@ DATA_DISH = [
 ]
 
 
-class LoadData:
+class LoadTestData:
     @staticmethod
-    async def to_db(db_conn) -> bool:
+    async def to_db() -> bool:
+        gener = get_db()
+        asyn_db = await gener.__anext__()
         query_load_menu = menus.insert().returning(menus.c.id).values(DATA_MENU)
-        result_menu = (await db_conn.execute(query_load_menu)).fetchall()
+        result_menu = (await asyn_db.execute(query_load_menu)).fetchall()
         indx = 0
         for ids in result_menu:
             for _ in range(0, 2):
@@ -48,7 +51,7 @@ class LoadData:
         query_load_sub_menu = (
             sub_menus.insert().returning(sub_menus.c.id).values(DATA_SUB_MENU)
         )
-        result_sub_menu = (await db_conn.execute(query_load_sub_menu)).fetchall()
+        result_sub_menu = (await asyn_db.execute(query_load_sub_menu)).fetchall()
         indx = 0
         for ids in result_sub_menu:
             for _ in range(0, 2):
@@ -56,8 +59,8 @@ class LoadData:
                 indx += 1
         query_load_dish = dish.insert().values(DATA_DISH)
         try:
-            await db_conn.execute(query_load_dish)
-            await db_conn.commit()
+            await asyn_db.execute(query_load_dish)
+            await asyn_db.commit()
         except IntegrityError:
             return False
         except PostgresError:

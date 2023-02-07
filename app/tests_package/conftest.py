@@ -5,8 +5,6 @@ from httpx import AsyncClient
 
 from api.v1.apps import app as app_fastapi
 
-clients = AsyncClient(app=app_fastapi)
-
 
 @pytest.yield_fixture(scope="session")
 def event_loop(request):
