@@ -17,7 +17,7 @@ class MenuService:
     """Логика для меню"""
 
     @staticmethod
-    async def list_menu() -> list:
+    async def list_menu() -> list[dict]:
         """Метод получения списка меню либо из кеша либо из Postgres"""
         gener_cache = get_cache()
         asyn_cache = await gener_cache.__anext__()
@@ -27,7 +27,7 @@ class MenuService:
         return await CacheMenu.set_menu(asyn_cache, response_data)
 
     @staticmethod
-    async def get_menu_id(menu_id: int):
+    async def get_menu_id(menu_id) -> dict:
         """Метод получения меню по id либо из кеша либо из Postgres"""
         gener_cache = get_cache()
         asyn_cache = await gener_cache.__anext__()
@@ -39,7 +39,7 @@ class MenuService:
         return await CacheMenu.set_menu(asyn_cache, response_data, menu_id)
 
     @staticmethod
-    async def create_menu(request_data):
+    async def create_menu(request_data) -> dict:
         """Метод добавления меню в БД и очистки не актуального кеша"""
         gener_cache = get_cache()
         gener_db = get_db()
@@ -50,7 +50,7 @@ class MenuService:
         return response_data
 
     @staticmethod
-    async def edit_menu(menu_id, request_data):
+    async def edit_menu(menu_id, request_data) -> dict:
         """Метод редактирования меню в БД и очистки не актуального кеша"""
         gener_cache = get_cache()
         gener_db = get_db()
@@ -63,7 +63,7 @@ class MenuService:
         return await CrudMenu.edit_menu_db(menu_id, request_data, asyn_db)
 
     @staticmethod
-    async def delete_menu(menu_id):
+    async def delete_menu(menu_id) -> dict:
         """Метод удаления меню в БД и очистки не актуального кеша"""
         gener_cache = get_cache()
         gener_db = get_db()
@@ -78,7 +78,7 @@ class SubMenuService:
     """Логика для подменю"""
 
     @staticmethod
-    async def list_submenu(menu_id: int):
+    async def list_submenu(menu_id) -> list[dict]:
         gener_cache = get_cache()
         asyn_cache = await gener_cache.__anext__()
         """Метод получения списка подменю либо из кеша либо из Postgres"""
@@ -90,7 +90,7 @@ class SubMenuService:
         return await CacheSubMenu.set_sub_menu(asyn_cache, response_data, menu_id)
 
     @staticmethod
-    async def get_submenu_id(menu_id, sub_menu_id):
+    async def get_submenu_id(menu_id, sub_menu_id) -> dict:
         """Метод получения подменю по id либо из кеша либо из Postgres"""
         gener_cache = get_cache()
         asyn_cache = await gener_cache.__anext__()
@@ -106,7 +106,7 @@ class SubMenuService:
         )
 
     @staticmethod
-    async def create_submenu(menu_id, request_data):
+    async def create_submenu(menu_id, request_data) -> dict:
         """Метод добавления подменю в БД и очистки не актуального кеша"""
         gener_cache = get_cache()
         gener_db = get_db()
@@ -119,7 +119,7 @@ class SubMenuService:
         return response_data
 
     @staticmethod
-    async def edit_submenu(menu_id, sub_menu_id, request_data):
+    async def edit_submenu(menu_id, sub_menu_id, request_data) -> dict:
         """Метод редактирования подменю в БД и очистки не актуального кеша"""
         gener_cache = get_cache()
         gener_db = get_db()
@@ -136,7 +136,7 @@ class SubMenuService:
         return response_data
 
     @staticmethod
-    async def delete_submenu(menu_id: int, sub_menu_id: int):
+    async def delete_submenu(menu_id, sub_menu_id) -> dict:
         """Метод удаления подменю в БД и очистки не актуального кеша"""
         gener_cache = get_cache()
         gener_db = get_db()
@@ -153,7 +153,7 @@ class DishService:
     """Логика для блюд"""
 
     @staticmethod
-    async def list_dish(menu_id: int, sub_menu_id: int):
+    async def list_dish(menu_id, sub_menu_id) -> list[dict]:
         """Метод получения списка блюд либо из кеша либо из Postgres"""
         gener_cache = get_cache()
         gener_db = get_db()
@@ -167,10 +167,10 @@ class DishService:
 
     @staticmethod
     async def get_dish_id(
-        menu_id: int,
-        sub_menu_id: int,
-        dish_id: int,
-    ):
+        menu_id,
+        sub_menu_id,
+        dish_id,
+    ) -> dict:
         """Метод получения блюда по id либо из кеша либо из Postgres"""
         gener_cache = get_cache()
         gener_db = get_db()
@@ -189,10 +189,10 @@ class DishService:
 
     @staticmethod
     async def create_dish(
-        menu_id: int,
-        sub_menu_id: int,
+        menu_id,
+        sub_menu_id,
         request_data,
-    ):
+    ) -> dict:
         """Метод добавления блюда в БД и очистки не актуального кеша"""
         gener_cache = get_cache()
         gener_db = get_db()
@@ -207,11 +207,11 @@ class DishService:
 
     @staticmethod
     async def edit_dish(
-        menu_id: int,
-        sub_menu_id: int,
-        dish_id: int,
+        menu_id,
+        sub_menu_id,
+        dish_id,
         request_data,
-    ):
+    ) -> dict:
         """Метод редактирования блюда в БД и очистки не актуального кеша"""
         gener_cache = get_cache()
         gener_db = get_db()
@@ -231,7 +231,7 @@ class DishService:
         menu_id,
         sub_menu_id,
         dish_id,
-    ):
+    ) -> dict:
         """Метод удаления блюда в БД и очистки не актуального кеша"""
         gener_cache = get_cache()
         gener_db = get_db()
@@ -249,7 +249,7 @@ class LoadData:
     """Логика загрузки данны в БД"""
 
     @staticmethod
-    async def test_data_to_db():
+    async def test_data_to_db() -> JSONResponse:
         """Метод загрузки тестовых данных в БД"""
         bool_load = await LoadTestData.to_db()
         if bool_load:
@@ -263,7 +263,7 @@ class TaskXLSX:
     """Логика создания/получения пользовательских файлов"""
 
     @staticmethod
-    async def generate_xlsx_menu():
+    async def generate_xlsx_menu() -> JSONResponse:
         """Метод запуска задачи на генерацию .xlsx файла меню"""
         gener_cache = get_cache()
         asyn_cache = await gener_cache.__anext__()
@@ -276,7 +276,7 @@ class TaskXLSX:
         return JSONResponse(content=info_data, status_code=202)
 
     @staticmethod
-    async def status_task(task_id):
+    async def status_task(task_id) -> JSONResponse:
         status_task = app_celery.AsyncResult(task_id).status
         info_data = {"status task": status_task}
         if status_task == "SUCCESS":
@@ -285,7 +285,7 @@ class TaskXLSX:
         return JSONResponse(content=info_data, status_code=200)
 
     @staticmethod
-    async def download_menu(task_id):
+    async def download_menu(task_id) -> JSONResponse | FileResponse:
         gener_cache = get_cache()
         asyn_cache = await gener_cache.__anext__()
         name_file = await asyn_cache.get(str(task_id))
