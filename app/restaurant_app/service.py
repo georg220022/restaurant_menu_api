@@ -55,7 +55,6 @@ class MenuService:
         gener_cache = get_cache()
         gener_db = get_db()
         asyn_cache = await gener_cache.__anext__()
-
         asyn_db = await gener_db.__anext__()
         response_data = await CacheMenu.clear_cache(asyn_cache, menu_id)
         if response_data == "NotFound":
@@ -68,7 +67,6 @@ class MenuService:
         gener_cache = get_cache()
         gener_db = get_db()
         asyn_cache = await gener_cache.__anext__()
-
         asyn_db = await gener_db.__anext__()
         await CacheMenu.clear_cache(asyn_cache, menu_id)
         return await CrudMenu.delete_menu_db(menu_id, asyn_db)
@@ -158,7 +156,6 @@ class DishService:
         gener_cache = get_cache()
         gener_db = get_db()
         asyn_cache = await gener_cache.__anext__()
-
         asyn_db = await gener_db.__anext__()
         if await CacheDish.check_cache(asyn_cache, menu_id, sub_menu_id):
             return await CacheDish.get_dish(asyn_cache, menu_id, sub_menu_id)
@@ -197,7 +194,6 @@ class DishService:
         gener_cache = get_cache()
         gener_db = get_db()
         asyn_cache = await gener_cache.__anext__()
-
         asyn_db = await gener_db.__anext__()
         response_data = await CrudDish.create_dish_db(
             menu_id, sub_menu_id, request_data, asyn_db
@@ -216,7 +212,6 @@ class DishService:
         gener_cache = get_cache()
         gener_db = get_db()
         asyn_cache = await gener_cache.__anext__()
-
         asyn_db = await gener_db.__anext__()
         response_data = await CrudDish.edit_dish_db(
             menu_id, sub_menu_id, dish_id, request_data, asyn_db
@@ -236,7 +231,6 @@ class DishService:
         gener_cache = get_cache()
         gener_db = get_db()
         asyn_cache = await gener_cache.__anext__()
-
         asyn_db = await gener_db.__anext__()
         response_data = await CrudDish.delete_dish_db(
             menu_id, sub_menu_id, dish_id, asyn_db
@@ -296,6 +290,6 @@ class TaskXLSX:
                 return FileResponse(
                     path=path_file,
                     filename="FullMenu.xlsx",
-                    media_type="multipart/form-data",
+                    media_type="application/octet-stream",
                 )
         return JSONResponse(content={"detail": "NotFound"}, status_code=404)

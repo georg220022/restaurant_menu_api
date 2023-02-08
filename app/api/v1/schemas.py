@@ -3,6 +3,12 @@ from pydantic import BaseModel
 """СХЕМЫ СВЯЗАННЫЕ С ЗАДАЧАМИ"""
 
 
+class FileNotFound(BaseModel):
+    """Схема ответа если файл не найден"""
+
+    detail: str
+
+
 class ResponseLoadTestData(BaseModel):
     """Cхема ответа загрузки тестовых данных"""
 

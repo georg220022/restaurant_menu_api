@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 from fastapi import APIRouter, FastAPI
+from fastapi.responses import FileResponse
 from restaurant_app.service import (
     DishService,
     LoadData,
@@ -14,6 +15,7 @@ from .schemas import (
     DeleteRestaurantSubMenuSchema,
     DeleteResturantMenuSchema,
     ErrorSchema,
+    FileNotFound,
     GetRestaurantDishSchema,
     GetRestaurantMenuSchema,
     GetRestaurantSubMenuSchema,
@@ -273,6 +275,14 @@ async def get_status_task(task_id: str):
     "/api/v1/download/{task_id}",
     status_code=200,
     tags=["Получение .xlsx файла"],
+    response_class=FileResponse,
+    responses={
+        200: {
+            "content": {"file": {}},
+            "description": "Начнется загрузка xlsx файла",
+        },
+        404: {"model": FileNotFound},
+    },
 )
 async def download_xlsx_menu(task_id: str):
     """Загрузка .xlsx меню"""
